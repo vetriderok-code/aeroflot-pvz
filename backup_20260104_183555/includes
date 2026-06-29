@@ -1,0 +1,25 @@
+<!-- templates/includes/navigation.html -->
+<nav class="top-nav">
+    <div class="logo">Аэрофлот</div>
+    <div class="nav-links">
+        <a href="/" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Карта</a>
+        <a href="/statistics/" class="{% if request.resolver_match.url_name == 'flights' %}active{% endif %}">Статистика</a>
+        <a href="/schedule/" class="{% if request.resolver_match.url_name == 'flights' %}active{% endif %}">Расписание</a>
+        <a href="/rating/" class="{% if request.resolver_match.url_name == 'rating' %}active{% endif %}">Рейтинг</a>
+        <a href="/reports/" class="{% if request.resolver_match.url_name == 'reports-page' %}active{% endif %}">Отчеты</a>
+        {% comment %}Кнопка Администрирование - только для администраторов{% endcomment %}
+        {% if user.is_authenticated %}
+            {% if user.is_staff or user.is_superuser %}
+            <a href="/admin/" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">Администрирование</a>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="user-info">
+        {% if user.is_authenticated %}
+            <span style="margin-right: 15px;">Пользователь: {{ user.username }}</span>
+            <a href="{% url 'logout' %}" style="color: #ffcccc; text-decoration: none; padding: 5px 10px; border: 1px solid #ffcccc; border-radius: 4px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='#ffcccc';">Выход</a>
+        {% else %}
+            <a href="{% url 'login' %}" style="color: #ffcccc; text-decoration: none;">Войти</a>
+        {% endif %}
+    </div>
+</nav>

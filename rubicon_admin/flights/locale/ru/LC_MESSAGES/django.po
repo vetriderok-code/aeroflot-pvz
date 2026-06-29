@@ -1,0 +1,377 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-25 15:38+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: flights/admin.py:96
+msgid "Personal info"
+msgstr "Персональные данные"
+
+#: flights/admin.py:97
+msgid "Permissions"
+msgstr "Права доступа"
+
+#: flights/admin.py:100
+msgid "Important dates"
+msgstr "Активности"
+
+#: flights/admin.py:101
+msgid "Pilot Info"
+msgstr "Информация о пилоте"
+
+#: flights/admin.py:124
+#, fuzzy
+#| msgid "Callname"
+msgid "Pilot Callname"
+msgstr "Позывной"
+
+#: flights/admin.py:261
+msgid "Дата вылета (точная)"
+msgstr ""
+
+#: flights/admin.py:290
+msgid "Все даты"
+msgstr ""
+
+#: flights/admin.py:757
+msgid "Пожалуйста, выберите хотя бы один .xlsx файл."
+msgstr ""
+
+#: flights/admin.py:1025
+msgid "Импорт вылетов из XLSX"
+msgstr ""
+
+#: flights/apps.py:8 flights/models.py:481
+msgid "flights"
+msgstr "Вылеты"
+
+#: flights/models.py:68
+msgid "user"
+msgstr "Пользователь"
+
+#: flights/models.py:69
+msgid "users"
+msgstr "Пользователи"
+
+#: flights/models.py:72
+msgid "Callname"
+msgstr "Позывной"
+
+#: flights/models.py:73
+msgid "TG ID"
+msgstr "TG ID"
+
+#: flights/models.py:74
+msgid "Driver Callname"
+msgstr "Позывной водителя"
+
+#: flights/models.py:75
+msgid "Engineer Callname"
+msgstr "Позывной инженера"
+
+#: flights/models.py:76
+msgid "Drone Type"
+msgstr "Тип дрона"
+
+#: flights/models.py:77
+msgid "Video Type"
+msgstr "Видео"
+
+#: flights/models.py:78
+msgid "Manual Type"
+msgstr "Управление"
+
+#: flights/models.py:85 flights/models.py:187
+msgid "pilot"
+msgstr "Пилот"
+
+#: flights/models.py:86
+msgid "pilots"
+msgstr "Пилоты"
+
+#: flights/models.py:97
+msgid "kt"
+msgstr "КТ"
+
+#: flights/models.py:98
+msgid "st"
+msgstr "СТ"
+
+#: flights/models.py:102
+msgid "dronetype"
+msgstr "Тип дрона"
+
+#: flights/models.py:103
+msgid "description"
+msgstr "Описание"
+
+#: flights/models.py:105 flights/models.py:190
+msgid "drone_type"
+msgstr "Тип дрона"
+
+#: flights/models.py:115
+msgid "drone"
+msgstr "Дрон"
+
+#: flights/models.py:116
+msgid "drones"
+msgstr "Дроны"
+
+#: flights/models.py:121 flights/models.py:193
+msgid "explosive_type"
+msgstr "Тип ВВ"
+
+#: flights/models.py:128
+msgid "explosive type"
+msgstr "Тип ВВ"
+
+#: flights/models.py:129
+msgid "explosive types"
+msgstr "Типы ВВ"
+
+#: flights/models.py:132 flights/models.py:194
+msgid "explosive_device"
+msgstr "Взрыватель"
+
+#: flights/models.py:139
+msgid "explosive device"
+msgstr "Взрыватель"
+
+#: flights/models.py:140
+msgid "explosive devices"
+msgstr "Типы взрывателей"
+
+#: flights/models.py:143
+#, fuzzy
+#| msgid "direction"
+msgid "direction_type"
+msgstr "Направление"
+
+#: flights/models.py:150
+#, fuzzy
+#| msgid "direction"
+msgid "direction type"
+msgstr "Направление"
+
+#: flights/models.py:151
+#, fuzzy
+#| msgid "direction"
+msgid "direction types"
+msgstr "Направления"
+
+#: flights/models.py:154 flights/models.py:199
+msgid "target_type"
+msgstr "Тип цели"
+
+#: flights/models.py:155
+#, fuzzy
+#| msgid "target_type"
+msgid "target_value"
+msgstr "Тип цели"
+
+#: flights/models.py:162
+msgid "target type"
+msgstr "Цель"
+
+#: flights/models.py:163
+msgid "target types"
+msgstr "Типы целей"
+
+#: flights/models.py:166 flights/models.py:200
+msgid "corrective_type"
+msgstr "Корректировка"
+
+#: flights/models.py:173
+msgid "corrective type"
+msgstr "Корректировка"
+
+#: flights/models.py:174
+msgid "corrective types"
+msgstr "Типы коррективов"
+
+#: flights/models.py:177
+msgid "defeated"
+msgstr "Поражено"
+
+#: flights/models.py:178
+msgid "not defeated"
+msgstr "Не поражено"
+
+#: flights/models.py:179
+msgid "destroyed"
+msgstr "Уничтожено"
+
+#: flights/models.py:182
+msgid "exists"
+msgstr "Есть"
+
+#: flights/models.py:183
+msgid "not exists"
+msgstr "Нет"
+
+#: flights/models.py:186
+msgid "flight_number"
+msgstr "Номер вылета"
+
+#: flights/models.py:188
+msgid "engineer_callname"
+msgstr "Позывной инженера"
+
+#: flights/models.py:189
+msgid "driver_callname"
+msgstr "Позывной водителя"
+
+#: flights/models.py:191
+msgid "video_type"
+msgstr "Видео"
+
+#: flights/models.py:192
+msgid "manage_type"
+msgstr "Управление"
+
+#: flights/models.py:195
+msgid "flight_date"
+msgstr "Дата вылета"
+
+#: flights/models.py:196
+msgid "flight_time"
+msgstr "Время вылета"
+
+#: flights/models.py:197
+msgid "distance"
+msgstr "Дистанция"
+
+#: flights/models.py:198
+#, fuzzy
+#| msgid "video_type"
+msgid "video_length"
+msgstr "Видео"
+
+#: flights/models.py:202
+msgid "result"
+msgstr "Результат"
+
+#: flights/models.py:207
+msgid "coordinates"
+msgstr "Координаты"
+
+#: flights/models.py:208
+msgid "direction"
+msgstr "Направление"
+
+#: flights/models.py:209
+msgid "comment"
+msgstr "Комментарий"
+
+#: flights/models.py:210
+msgid "drone_remains"
+msgstr "Остаток дронов"
+
+#: flights/models.py:212
+msgid "objective"
+msgstr "Объектив"
+
+#: flights/models.py:480
+msgid "flight"
+msgstr "Вылет"
+
+#: flights/templates/admin/broadcast_form.html:8
+#: flights/templates/admin/import_xlsx.html:9
+#: flights/templates/admin/pilot_broadcast.html:8
+msgid "Home"
+msgstr "Дом"
+
+#: flights/templates/admin/date_filter.html:2
+#, python-format
+msgid " По %(filter_title)s "
+msgstr ""
+
+#: flights/templates/admin/flight_changelist.html:10
+msgid "Импорт данных из Excel"
+msgstr ""
+
+#: flights/templates/admin/flight_changelist.html:19
+#: flights/templates/admin/import_xlsx.html:26
+msgid ""
+"Файл должен содержать данные о вылетах на втором листе, начиная со строки с "
+"заголовками (например, \"Время\", \"Номер вылета\" и т.д.). Время до 06:30 "
+"будет отнесено к следующему дню."
+msgstr ""
+
+#: flights/templates/admin/import_xlsx.html:21
+msgid "Файл .xlsx:"
+msgstr ""
+
+#: flights/templates/admin/import_xlsx.html:24
+msgid "Импортировать"
+msgstr ""
+
+#: flights/apps.py:8
+msgid "Вылеты"
+msgstr "Вылеты"
+
+#: flights/models.py
+msgid "Расположение"
+msgstr "Расположение"
+
+msgid "Расположения"
+msgstr "Расположения"
+
+msgid "оператор (дежурство)"
+msgstr "Оператор (дежурство)"
+
+msgid "операторы (дежурство)"
+msgstr "Операторы (дежурство)"
+
+msgid "история перемещения"
+msgstr "История перемещения"
+
+msgid "история перемещений"
+msgstr "История перемещений"
+
+msgid "live flight"
+msgstr "Оперативный вылет"
+
+msgid "live flights"
+msgstr "Оперативные вылеты"
+
+msgid "dashboard alert"
+msgstr "Оповещение дашборда"
+
+msgid "dashboard alerts"
+msgstr "Оповещения дашборда"
+
+msgid "telegram flight report"
+msgstr "Отчёт из Telegram"
+
+msgid "telegram flight reports"
+msgstr "Отчёты из Telegram"
+
+msgid "map layer"
+msgstr "Слой карты"
+
+msgid "map layers"
+msgstr "Слои карты"
+
+msgid "import_progress"
+msgstr "Прогресс импорта"
+
+msgid "import_progresses"
+msgstr "Прогресс импорта"

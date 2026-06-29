@@ -1,0 +1,23 @@
+{% load i18n %}
+<h3>{% blocktrans with filter_title=title %} По {{ filter_title }} {% endblocktrans %}</h3>
+<ul>
+  <li>
+    <form method="get" id="flight-date-filter-form">
+      {% for k, v in cl.params.items %}
+        {% if k != spec.parameter_name %}
+          <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}
+      {% endfor %}
+      <input
+        type="date"
+        name="{{ spec.parameter_name }}"
+        value="{{ spec.value|default:'' }}"
+        id="id_{{ spec.parameter_name }}"
+        onchange="this.form.submit();"
+      >
+      {% if spec.value %}
+        <a href="?{% for k, v in cl.params.items %}{% if k != spec.parameter_name %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Очистить</a>
+      {% endif %}
+    </form>
+  </li>
+</ul>

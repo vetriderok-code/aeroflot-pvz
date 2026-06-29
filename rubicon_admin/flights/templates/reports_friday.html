@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <title>Пятничный отчёт</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include 'includes/navigation_head.html' %}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+        .main-content {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+        }
+        .breadcrumb {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .breadcrumb a {
+            color: #888;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover { color: #ff9999; }
+        h1 {
+            font-size: 28px;
+            color: #ff6666;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 16px;
+            color: #ff9999;
+            margin-bottom: 16px;
+        }
+        .period-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .field label {
+            display: block;
+            color: #ff9999;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .field input[type="date"] {
+            width: 100%;
+            padding: 10px 12px;
+            background: #111;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #eee;
+        }
+        .period-label {
+            font-size: 15px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .kpi {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+        .kpi__value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .kpi__label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .format-note {
+            color: #888;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .summary-preview {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #ddd;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+        }
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .btn {
+            display: inline-block;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #8B0000;
+            color: #fff;
+            text-decoration: none;
+            font-size: 15px;
+        }
+        .btn:hover { background: #a50000; }
+        .btn-secondary {
+            background: #333;
+        }
+        .btn-secondary:hover { background: #444; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #333;
+            text-align: left;
+        }
+        th {
+            color: #ff9999;
+            font-weight: 600;
+        }
+        .empty-note {
+            color: #888;
+            font-style: italic;
+            padding: 12px 0;
+        }
+    </style>
+</head>
+<body>
+{% include 'includes/navigation.html' %}
+<main class="main-content">
+    <p class="breadcrumb"><a href="{% url 'reports-page' %}">Отчёты</a> / Пятничный отчёт</p>
+    <h1>Пятничный отчёт</h1>
+    <p class="subtitle">Укажите период — портал сформирует Excel и Word: лист «Цели» и сводку «Итог».</p>
+
+    <div class="card">
+        <h2>Период</h2>
+        <form method="get" id="periodForm" class="period-form">
+            <div class="field">
+                <label for="date_from">Дата начала</label>
+                <input type="date" id="date_from" name="date_from" value="{{ date_from }}" required>
+            </div>
+            <div class="field">
+                <label for="date_to">Дата окончания</label>
+                <input type="date" id="date_to" name="date_to" value="{{ date_to }}" required>
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end;">
+                <button type="submit" class="btn">Обновить превью</button>
+            </div>
+        </form>
+        <p class="period-label">{{ preview.period_label }}</p>
+
+        <div class="kpi-grid">
+            <div class="kpi">
+                <div class="kpi__value">{{ preview.total_targets }}</div>
+                <div class="kpi__label">Строк на листе «Цели»</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi__value">{{ preview.total_destroyed }}</div>
+                <div class="kpi__label">Уничтожено (без обеспечения)</div>
+            </div>
+            {% for item in preview.directions %}
+            <div class="kpi">
+                <div class="kpi__value">{{ item.count }}</div>
+                <div class="kpi__label">{{ item.name }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <p class="format-note">
+            Лист <strong>Цели</strong> заполняется из сводной по поражённым вылетам с координатами.
+            Лист <strong>Итог</strong> и начало Word — текстовая сводка по ТН.
+            Далее в Word — разделы <strong>ПРИМЕНЕНИЕ «дрон»</strong> со списком поражённых объектов
+            (как на 7-й странице образца). Определение ближайшего НП может занять несколько минут.
+        </p>
+
+        <div class="summary-preview">{% for line in preview.summary_lines %}{{ line }}
+{% endfor %}</div>
+
+        <div class="btn-row">
+            <a class="btn" href="{% url 'friday-report-export' %}?kind=zip&amp;date_from={{ date_from }}&amp;date_to={{ date_to }}">Скачать Excel + Word (zip)</a>
+            <a class="btn btn-secondary" href="{% url 'friday-report-export' %}?kind=excel&amp;date_from={{ date_from }}&amp;date_to={{ date_to }}">Только Excel</a>
+            <a class="btn btn-secondary" href="{% url 'friday-report-export' %}?kind=word&amp;date_from={{ date_from }}&amp;date_to={{ date_to }}">Только Word</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Уничтожено по типам целей</h2>
+        {% if preview.targets %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Характер цели</th>
+                    <th>Количество</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in preview.targets %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-note">За выбранный период целей нет.</p>
+        {% endif %}
+    </div>
+</main>
+</body>
+</html>

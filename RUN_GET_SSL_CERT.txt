@@ -1,0 +1,34 @@
+===========================================
+ПОЛУЧЕНИЕ SSL СЕРТИФИКАТОВ
+===========================================
+
+ВАЖНО: Замените YOUR_EMAIL@example.com на ваш реальный email адрес!
+
+Команда для Windows PowerShell:
+--------------------------------
+.\get-ssl-cert.ps1 -Email "YOUR_EMAIL@example.com"
+
+Или напрямую через Docker:
+--------------------------
+docker run -it --rm -v "${PWD}/certbot/conf:/etc/letsencrypt" -v "${PWD}/certbot/www:/var/www/certbot" certbot/certbot certonly --webroot --webroot-path=/var/www/certbot --email YOUR_EMAIL@example.com --agree-tos --no-eff-email -d aeroflot-pvz.ru -d www.aeroflot-pvz.ru
+
+Для Linux/Mac:
+---------------
+chmod +x get-ssl-cert.sh
+./get-ssl-cert.sh YOUR_EMAIL@example.com
+
+===========================================
+ПЕРЕД ЗАПУСКОМ УБЕДИТЕСЬ ЧТО:
+===========================================
+1. Домен aeroflot-pvz.ru указывает на IP 5.104.51.225
+2. Порт 80 открыт и доступен из интернета
+3. Контейнеры запущены (docker-compose ps)
+
+===========================================
+ПОСЛЕ ПОЛУЧЕНИЯ СЕРТИФИКАТОВ:
+===========================================
+1. Включите HTTPS редирект в nginx/conf.d/default.conf
+2. Перезапустите: docker-compose restart webserver
+3. Проверьте: curl -I https://aeroflot-pvz.ru
+
+Подробная инструкция: GET_SSL_CERT_INSTRUCTIONS.md

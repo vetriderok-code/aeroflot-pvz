@@ -1,0 +1,1491 @@
+<!-- templates/rating_tabs.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг пилотов</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --kt-color: #3498db;
+            --st-color: #9b59b6;
+            --overall-color: #f39c12;
+        }
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50, #4a235a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 50px;
+            padding-top: 70px; /* Увеличен отступ сверху для fixed навигации */
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Общая навигация - стили из statistics.html */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1f1f1f; /* Цвет из statistics */
+            backdrop-filter: none; /* Убираем backdrop-filter */
+            border-bottom: 1px solid #333; /* Цвет из statistics */
+            padding: 0 20px; /* Отступы из statistics */
+            height: 60px; /* Высота из statistics */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); /* Тень из statistics */
+        }
+        .logo {
+            font-size: 20px; /* Размер из statistics */
+            font-weight: bold; /* Вес из statistics */
+            color: #bb86fc; /* Цвет из statistics */
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px; /* Отступ из statistics */
+        }
+        .nav-links a {
+            color: #ccc; /* Цвет из statistics */
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 8px 12px; /* Отступы из statistics */
+            border-radius: 4px; /* Радиус из statistics */
+        }
+        .nav-links a:hover {
+            background: #2d2d2d; /* Фон из statistics */
+            color: #bb86fc; /* Цвет из statistics */
+        }
+        .nav-links a.active {
+            background: #2d2d2d; /* Фон из statistics */
+            color: #bb86fc; /* Цвет из statistics */
+        }
+        .user-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        /* Мобильное меню - стили из statistics.html */
+        .nav-toggle {
+            display: none;
+            cursor: pointer;
+        }
+        .nav-toggle .bar {
+            display: block;
+            width: 25px;
+            height: 3px;
+            margin: 5px auto;
+            background-color: #ccc; /* Цвет из statistics */
+            transition: 0.3s;
+        }
+        .nav-toggle.active .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .nav-toggle.active .bar:nth-child(1) {
+            transform: translateY(8px) rotate(45deg);
+        }
+        .nav-toggle.active .bar:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                left: -100%;
+                top: 60px; /* Высота навигации */
+                flex-direction: column;
+                background-color: #1f1f1f; /* Фон из statistics */
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+                z-index: 1000;
+                gap: 0;
+                padding: 0;
+            }
+            .nav-links.active {
+                left: 0;
+            }
+            .nav-links a {
+                display: block;
+                padding: 15px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .nav-toggle {
+                display: block;
+            }
+        }
+        /* Конец стилей навигации */
+
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .rating-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        .section-header {
+            padding: 20px 25px;
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin: 0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-content {
+            padding: 5px;
+        }
+        .pilot-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px; /* Уменьшено с 20px */
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* Убрана кликабельность */
+            /* Добавлено для предотвращения переполнения */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .target-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .pilot-position {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-align: center;
+            margin-right: 15px; /* Уменьшено с 20px */
+            min-width: 40px; /* Уменьшено с 50px */
+        }
+        .pilot-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #fff;
+            /* Добавлено для переноса, если имя слишком длинное */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .pilot-drone {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 8px; /* Уменьшено с 10px */
+            /* Добавлено для переноса */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .pilot-stats {
+            display: flex;
+            gap: 8px; /* Уменьшено с 10px */
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 100%; /* Занимает всю доступную ширину */
+        }
+        .stat-item {
+            text-align: center;
+            min-width: 0; /* Позволяет элементу сжиматься */
+            flex: 1 1 auto; /* Растягивается, но может сжиматься */
+            /* Добавлено для ограничения ширины на очень маленьких экранах */
+            max-width: calc(50% - 4px);
+        }
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            /* Добавлено для переноса очень длинных чисел */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            /* Добавлено для переноса */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .rating-badge {
+            color: white;
+            padding: 6px 12px; /* Уменьшено с 8px 15px */
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            /* Убрано flex-shrink: 0; чтобы бейдж мог немного сжиматься, если очень тесно */
+            /* flex-shrink: 0; */
+            margin-left: auto; /* Отталкивает бейдж вправо */
+        }
+        .kt-badge {
+            background: linear-gradient(45deg, var(--kt-color), #2980b9);
+        }
+        .st-badge {
+            background: linear-gradient(45deg, var(--st-color), #8e44ad);
+        }
+        .overall-badge {
+            background: linear-gradient(45deg, var(--overall-color), #e67e22);
+        }
+        /* Цветовое кодирование рейтинга */
+        .rating-badge.rating-excellent {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        .rating-badge.rating-good {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+        .rating-badge.rating-normal {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        .rating-badge.rating-low {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+        /* Прогресс-бары */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar.success {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+        .progress-bar.warning {
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+        }
+        .progress-bar.danger {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+        /* Скрытие "Не указан" для типа дрона */
+        .pilot-drone.empty {
+            opacity: 0.4;
+            font-style: italic;
+        }
+        .trophy-icon {
+            color: gold;
+            margin-right: 10px;
+        }
+        .medal-gold { color: gold; }
+        .medal-silver { color: silver; }
+        .medal-bronze { color: #cd7f32; }
+        .collapse-icon {
+            transition: transform 0.3s ease;
+        }
+        .collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+        }
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        /* Tabs styling */
+        .nav-tabs {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+        .nav-tabs .nav-link {
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid transparent;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .nav-tabs .nav-link:hover {
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .nav-tabs .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.3) white;
+            border-bottom: 3px solid white;
+        }
+        .tab-content {
+            min-height: 400px;
+        }
+        /* Modal styles */
+        .modal-content {
+            background: rgba(40, 40, 60, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .btn-close {
+            filter: invert(1);
+        }
+        .modal-body {
+            padding: 1.5rem;
+        }
+        .flight-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .flight-table th,
+        .flight-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .flight-table th {
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+        .flight-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .destroyed {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .not-defeated {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .defeated {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .modal-loading {
+            text-align: center;
+            padding: 30px;
+        }
+        .modal-error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        /* Mobile menu styles - адаптированы под новую навигацию */
+        @media (max-width: 768px) {
+            .top-nav {
+                 padding: 0 10px; /* Адаптация отступов */
+                 height: 50px; /* Адаптация высоты */
+            }
+            .logo {
+                font-size: 18px; /* Адаптация размера логотипа */
+            }
+            .user-info {
+                display: none; /* Скрываем на мобильных для экономии места */
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .header p {
+                font-size: 1rem;
+            }
+            .section-title {
+                font-size: 1.3rem;
+            }
+            .pilot-position {
+                font-size: 1.4rem;
+                margin-right: 0px;
+                min-width: 40px;
+            }
+            .pilot-name {
+                font-size: 1.1rem;
+            }
+            .pilot-drone {
+                font-size: 0.8rem;
+            }
+            .pilot-stats {
+                gap: 5px;
+                justify-content: space-around;
+            }
+            .stat-item {
+                min-width: 50px;
+            }
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            .stat-label {
+                font-size: 0.6rem;
+            }
+            .rating-badge {
+                font-size: 1rem;
+                padding: 6px 12px;
+            }
+            .nav-tabs .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            .flight-table {
+                font-size: 0.8rem;
+            }
+            .flight-table th,
+            .flight-table td {
+                padding: 8px 10px;
+            }
+        }
+        @media (max-width: 480px) {
+            .pilot-card {
+                padding: 7px; /* Еще меньше отступы */
+            }
+            .pilot-position {
+                font-size: 1.5rem; /* Уменьшено */
+                margin-right: 0px; /* Уменьшено */
+                min-width: 35px; /* Уменьшено */
+            }
+            .pilot-name {
+                font-size: 1.2rem; /* Уменьшено */
+            }
+            .pilot-drone {
+                font-size: 0.8rem; /* Уменьшено */
+            }
+            .pilot-stats {
+                gap: 5px; /* Еще меньше отступы */
+            }
+            .stat-item {
+                /* На очень маленьких экранах позволяет элементам занимать всю строку при необходимости */
+                min-width: calc(50% - 2.5px);
+                max-width: calc(50% - 2.5px);
+            }
+            .stat-value {
+                font-size: 0.95rem; /* Уменьшено */
+            }
+            .stat-label {
+                font-size: 0.6rem; /* Уменьшено */
+            }
+            .rating-badge {
+                font-size: 1rem; /* Уменьшено */
+                padding: 5px 10px; /* Уменьшено */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Общая навигация - заменено на include -->
+    {% include 'includes/navigation.html' %}
+    <!-- Мобильное меню - добавлено -->
+    <div class="nav-toggle" id="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </div>
+
+    <div class="container py-4">
+        <div class="header">
+            <h1><i class="fas fa-trophy trophy-icon"></i>Рейтинг пилотов</h1>
+            <p>Лучшие специалисты по управлению летательными аппаратами</p>
+            <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap mt-3">
+                <button class="refresh-btn" id="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Обновить данные
+                </button>
+                <div class="search-container" style="position: relative;">
+                    <input type="text" id="pilot-search" class="form-control" 
+                           placeholder="Поиск пилота..." 
+                           style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); 
+                                  color: white; padding: 8px 35px 8px 15px; border-radius: 20px; 
+                                  min-width: 250px;">
+                    <i class="fas fa-search" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
+                                                     color: rgba(255, 255, 255, 0.5); pointer-events: none;"></i>
+                </div>
+            </div>
+        </div>
+        <!-- Loading indicator -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка рейтинга...</p>
+        </div>
+        <!-- Error message -->
+        <div id="error" class="error" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p id="error-message">Ошибка загрузки данных</p>
+        </div>
+        <!-- Content sections (initially hidden) -->
+        <div id="content" style="display: none;">
+            <!-- Две колонки: Рейтинг пилотов и Рейтинг по целям -->
+            <div class="row">
+                <!-- Колонка 1: Рейтинг пилотов -->
+                <div class="col-lg-6 mb-4">
+                    <div class="header mb-3">
+                        <h2><i class="fas fa-users"></i> Рейтинг пилотов</h2>
+                    </div>
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs" id="ratingTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="week-tab" data-bs-toggle="tab" data-bs-target="#week" type="button" role="tab">
+                        <i class="fas fa-calendar-week"></i> Неделя
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="month-tab" data-bs-toggle="tab" data-bs-target="#month" type="button" role="tab">
+                        <i class="fas fa-calendar-alt"></i> Месяц
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="total-tab" data-bs-toggle="tab" data-bs-target="#total" type="button" role="tab">
+                        <i class="fas fa-history"></i> Всё время
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="ratingTabContent">
+                <!-- Week Tab -->
+                <div class="tab-pane fade show active" id="week" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#week-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-calendar-week overall-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг за неделю
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="week-content">
+                            <div class="row" id="week-rating">
+                                <!-- Данные будут загружены сюда -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Month Tab -->
+                <div class="tab-pane fade" id="month" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#month-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-calendar-alt kt-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг за месяц
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="month-content">
+                            <div class="row" id="month-rating">
+                                <!-- Данные будут загружены сюда -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Tab -->
+                <div class="tab-pane fade" id="total" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#total-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-history st-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг за всё время
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="total-content">
+                            <div class="row" id="total-rating">
+                                <!-- Данные будут загружены сюда -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                </div>
+                
+                <!-- Колонка 2: Рейтинг по целям -->
+                <div class="col-lg-6 mb-4">
+                    <div class="header mb-3">
+                        <h2><i class="fas fa-bullseye"></i> Рейтинг по целям</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.8;">Статистика эффективности по типам целей</p>
+                    </div>
+                    <ul class="nav nav-tabs" id="targetRatingTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="target-week-tab" data-bs-toggle="tab" data-bs-target="#target-week" type="button" role="tab">
+                        <i class="fas fa-calendar-week"></i> Неделя
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="target-month-tab" data-bs-toggle="tab" data-bs-target="#target-month" type="button" role="tab">
+                        <i class="fas fa-calendar-alt"></i> Месяц
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="target-total-tab" data-bs-toggle="tab" data-bs-target="#target-total" type="button" role="tab">
+                        <i class="fas fa-history"></i> Всё время
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="targetRatingTabContent">
+                <!-- Week Tab -->
+                <div class="tab-pane fade show active" id="target-week" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#target-week-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-calendar-week overall-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг целей за неделю
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="target-week-content">
+                            <div class="row" id="target-week-rating">
+                                <div class="col-12 text-center" id="target-week-loading" style="padding: 20px; color: #aaa;">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <span> Загрузка данных о целях...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Month Tab -->
+                <div class="tab-pane fade" id="target-month" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#target-month-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-calendar-alt kt-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг целей за месяц
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="target-month-content">
+                            <div class="row" id="target-month-rating">
+                                <div class="col-12 text-center" id="target-month-loading" style="padding: 20px; color: #aaa;">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <span> Загрузка данных о целях...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Total Tab -->
+                <div class="tab-pane fade" id="target-total" role="tabpanel">
+                    <div class="rating-section">
+                        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#target-total-content">
+                            <h2 class="section-title">
+                                <span>
+                                    <i class="fas fa-history st-badge p-2 rounded-circle me-3"></i>
+                                    Рейтинг целей за всё время
+                                </span>
+                                <i class="fas fa-chevron-down collapse-icon"></i>
+                            </h2>
+                        </div>
+                        <div class="section-content collapse show" id="target-total-content">
+                            <div class="row" id="target-total-rating">
+                                <div class="col-12 text-center" id="target-total-loading" style="padding: 20px; color: #aaa;">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <span> Загрузка данных о целях...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal for flight details -->
+    <div class="modal fade" id="flightDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="flightDetailsModalLabel">Детали вылетов пилота</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-loading" class="modal-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Загрузка данных о вылетах...</p>
+                    </div>
+                    <div id="modal-error" class="modal-error" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p id="modal-error-message">Ошибка загрузки данных</p>
+                    </div>
+                    <div id="modal-content" style="display: none;">
+                        <h6 id="pilot-info"></h6>
+                        <h6 id="period-info"></h6>
+                        <div class="table-responsive">
+                            <table class="flight-table">
+                                <thead>
+                                    <tr>
+                                        <th>Дата время</th>
+                                        <th>Цель</th>
+                                        <th>Результат</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="flight-details-body">
+                                    <!-- Flight details will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        console.log('=== НАЧАЛО СКРИПТА РЕЙТИНГА ===');
+        console.log('Время загрузки:', new Date().toISOString());
+        
+        // Глобальные переменные для хранения дат фильтрации
+        let currentPeriodData = {
+            week: { start_date: null },
+            month: { start_date: null },
+            total: { start_date: null }
+        };
+        
+        // Глобальная переменная для хранения всех данных рейтинга
+        let allRatingData = {
+            week: null,
+            month: null,
+            total: null
+        };
+        
+        // Функция для фильтрации данных по поисковому запросу
+        function filterPilotsBySearch(data, searchQuery) {
+            if (!searchQuery || searchQuery.trim() === '') {
+                return data;
+            }
+            const query = searchQuery.toLowerCase().trim();
+            return data.filter(pilot => {
+                const callname = (pilot.callname || '').toLowerCase();
+                const droneType = (pilot.drone_type || '').toLowerCase();
+                return callname.includes(query) || droneType.includes(query);
+            });
+        }
+        
+        // Функция для загрузки данных с API
+        async function loadRatingData() {
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const contentElement = document.getElementById('content');
+            const errorMessageElement = document.getElementById('error-message');
+            try {
+                // Показываем индикатор загрузки
+                loadingElement.style.display = 'block';
+                errorElement.style.display = 'none';
+                contentElement.style.display = 'none';
+                // Получаем текущие даты для фильтрации
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Начало недели (понедельник)
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                // Сохраняем даты для использования в модальном окне
+                currentPeriodData.week.start_date = startOfWeek.toISOString().split('T')[0];
+                currentPeriodData.month.start_date = startOfMonth.toISOString().split('T')[0];
+                currentPeriodData.total.start_date = null; // Все время - без даты
+                // Загружаем данные с API
+                const response = await fetch('/api/rating/');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // Получаем текущий поисковый запрос
+                const searchQuery = document.getElementById('pilot-search') ? 
+                    document.getElementById('pilot-search').value : '';
+                // Рендерим данные для всех вкладок
+                renderRating('week', data, searchQuery);
+                renderRating('month', data, searchQuery);
+                renderRating('total', data, searchQuery);
+                // Скрываем загрузку и показываем контент
+                loadingElement.style.display = 'none';
+                contentElement.style.display = 'block';
+                
+                // Загружаем рейтинг целей после показа контента
+                setTimeout(function() {
+                    console.log('========== ЗАГРУЗКА РЕЙТИНГА ЦЕЛЕЙ ==========');
+                    console.log('Контент показан, contentElement:', contentElement);
+                    console.log('Проверяем наличие контейнеров...');
+                    const testContainer = document.getElementById('target-week-rating');
+                    console.log('Тестовый контейнер target-week-rating:', testContainer);
+                    
+                    if (typeof loadTargetRatingData === 'function') {
+                        console.log('Функция loadTargetRatingData доступна, вызываем...');
+                        loadTargetRatingData();
+                    } else if (typeof window.loadTargetRatingData === 'function') {
+                        console.log('Функция window.loadTargetRatingData доступна, вызываем...');
+                        window.loadTargetRatingData();
+                    } else {
+                        console.error('Функция loadTargetRatingData НЕ НАЙДЕНА!');
+                        console.error('Тип loadTargetRatingData:', typeof loadTargetRatingData);
+                        console.error('Тип window.loadTargetRatingData:', typeof window.loadTargetRatingData);
+                    }
+                }, 1500);
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                loadingElement.style.display = 'none';
+                errorMessageElement.textContent = `Ошибка загрузки данных: ${error.message}`;
+                errorElement.style.display = 'block';
+            }
+        }
+        // Функция для обновления данных
+        function refreshData() {
+            loadRatingData();
+        }
+        // Функция для рендеринга рейтинга по периоду
+        function renderRating(period, data, searchQuery = '') {
+            const container = document.getElementById(`${period}-rating`);
+            container.innerHTML = '';
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Нет данных для отображения</p></div>';
+                return;
+            }
+            
+            // Сохраняем оригинальные данные
+            allRatingData[period] = data;
+            
+            // Фильтруем данные по поисковому запросу
+            const filteredData = filterPilotsBySearch(data, searchQuery);
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Ничего не найдено</p></div>';
+                return;
+            }
+            
+            // Сортируем пилотов по рейтингу за выбранный период
+            const sortedPilots = [...filteredData].sort((a, b) => {
+                const ratingA = parseFloat(a.rating && a.rating[period] ? a.rating[period] : 0) || 0;
+                const ratingB = parseFloat(b.rating && b.rating[period] ? b.rating[period] : 0) || 0;
+                return ratingB - ratingA;
+            });
+            sortedPilots.forEach((pilot, index) => {
+                const medalClass = getMedalClass(index + 1);
+                const medalIcon = getMedalIcon(index + 1);
+                const details = pilot.details ? pilot.details[period] : null;
+                const rating = pilot.rating && pilot.rating[period] !== undefined && pilot.rating[period] !== null ? 
+                    parseFloat(pilot.rating[period]) : 0;
+                
+                // Определяем класс рейтинга по значению
+                let ratingClass = 'rating-low';
+                if (rating >= 100) ratingClass = 'rating-excellent';
+                else if (rating >= 50) ratingClass = 'rating-good';
+                else if (rating >= 20) ratingClass = 'rating-normal';
+                
+                // Проверяем, указан ли тип дрона
+                const droneType = pilot.drone_type || 'Не указан';
+                const droneEmpty = !pilot.drone_type;
+                
+                // Процент успеха и точность
+                const successRate = details ? (details.success_rate || 0) : 0;
+                const accuracy = details ? (parseFloat(details.accuracy) * 100 || 0) : 0;
+                
+                const pilotCard = `
+                    <div class="col-12">
+                        <div class="pilot-card d-flex align-items-center" data-pilot-id="${escapeHtml(pilot.pilot_id)}" data-period="${period}">
+                            <div class="pilot-position">
+                                ${medalIcon ? `<i class="fas fa-medal ${medalClass}"></i>` : index + 1}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h3 class="pilot-name">${escapeHtml(pilot.callname)}</h3>
+                                        <div class="pilot-drone ${droneEmpty ? 'empty' : ''}" title="Тип дрона, используемого пилотом">
+                                            ${!droneEmpty ? `<i class="fas fa-drone"></i> ${escapeHtml(droneType)}` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="rating-badge ${ratingClass}" title="Рейтинг пилота: учитывает вес целей, точность и количество вылетов">
+                                        ${rating.toFixed(2)}
+                                    </div>
+                                </div>
+                                <div class="pilot-stats mt-3">
+                                    <div class="stat-item">
+                                        <div class="stat-value">${details ? details.flights_count : 'N/A'}</div>
+                                        <div class="stat-label">Вылетов</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${details ? details.destroys : 'N/A'}</div>
+                                        <div class="stat-label">Уничтожений</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${details ? (details.defeated || 0) : 'N/A'}</div>
+                                        <div class="stat-label">Поражено</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${details ? details.total_weight : 'N/A'}</div>
+                                        <div class="stat-label">Вес целей</div>
+                                    </div>
+                                </div>
+                                ${details ? `
+                                    <div class="mt-2">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+                                            <span>Процент успеха: <strong>${successRate.toFixed(1)}%</strong></span>
+                                            <span>Точность: <strong>${accuracy.toFixed(1)}%</strong></span>
+                                        </div>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar ${successRate >= 80 ? 'success' : successRate >= 50 ? 'warning' : 'danger'}" 
+                                                 style="width: ${Math.min(successRate, 100)}%;" 
+                                                 title="Процент успеха: ${successRate.toFixed(1)}%"></div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += pilotCard;
+            });
+        }
+        // Функция для отображения деталей вылетов пилота
+        async function showPilotFlights(pilotId, period) {
+            const modal = new bootstrap.Modal(document.getElementById('flightDetailsModal'));
+            const modalLoading = document.getElementById('modal-loading');
+            const modalError = document.getElementById('modal-error');
+            const modalContent = document.getElementById('modal-content');
+            const modalErrorMessage = document.getElementById('modal-error-message');
+            const flightDetailsBody = document.getElementById('flight-details-body');
+            const pilotInfo = document.getElementById('pilot-info');
+            const periodInfo = document.getElementById('period-info');
+            // Скрываем контент и показываем загрузку
+            modalContent.style.display = 'none';
+            modalError.style.display = 'none';
+            modalLoading.style.display = 'block';
+            // Открываем модальное окно
+            modal.show();
+            try {
+                // Получаем информацию о пилоте из текущих данных
+                const response = await fetch('/api/rating/');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pilotsData = await response.json();
+                const pilot = pilotsData.find(p => p.pilot_id === pilotId);
+                if (!pilot) {
+                    throw new Error('Пилот не найден');
+                }
+                // Устанавливаем информацию о пилоте и периоде
+                pilotInfo.textContent = `Пилот: ${pilot.callname}`;
+                let periodText = '';
+                let startDate = null;
+                switch(period) {
+                    case 'week':
+                        periodText = 'за неделю';
+                        startDate = currentPeriodData.week.start_date;
+                        break;
+                    case 'month':
+                        periodText = 'за месяц';
+                        startDate = currentPeriodData.month.start_date;
+                        break;
+                    case 'total':
+                        periodText = 'за всё время';
+                        startDate = currentPeriodData.total.start_date;
+                        break;
+                }
+                periodInfo.textContent = `Период: ${periodText}`;
+                // Формируем параметры запроса
+                let url = '/api/flights/?pilot=' + encodeURIComponent(pilot.callname);
+                if (startDate) {
+                    url += '&date_from=' + startDate;
+                }
+                // Загружаем данные о вылетах
+                const flightsResponse = await fetch(url);
+                if (!flightsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${flightsResponse.status}`);
+                }
+                const flightsData = await flightsResponse.json();
+                // Очищаем таблицу
+                flightDetailsBody.innerHTML = '';
+                if (!flightsData || flightsData.length === 0) {
+                    flightDetailsBody.innerHTML = '<tr><td colspan="5" class="text-center">Нет данных о вылетах</td></tr>';
+                } else {
+                    // Заполняем таблицу данными о вылетах
+                    flightsData.forEach(flight => {
+                        // Определяем класс для результата
+                        let resultClass = '';
+                        switch(flight.result) {
+                            case 'destroyed':
+                                resultClass = 'destroyed';
+                                break;
+                            case 'defeated':
+                                resultClass = 'defeated';
+                                break;
+                            case 'not defeated':
+                                resultClass = 'not-defeated';
+                                break;
+                        }
+                        // Получаем вес цели
+                        let targetWeight = 'N/A';
+                        if (flight.target) {
+                            // Здесь можно добавить логику для получения веса цели из TargetType
+                            // Пока что просто отображаем имя цели
+                            targetWeight = '1'; // Временное значение
+                        }
+                                                // Функция для форматирования даты и времени
+                        function formatFlightDateTime(dateStr, timeStr) {
+                            if (!dateStr || !timeStr) {
+                                // Если одно из значений отсутствует, пытаемся использовать другое или возвращаем 'N/A'
+                                if (dateStr) {
+                                    // Только дата, попробуем отформатировать
+                                    const dateObj = new Date(dateStr);
+                                    if (!isNaN(dateObj)) {
+                                        const day = String(dateObj.getDate()).padStart(2, '0');
+                                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                        const year = String(dateObj.getFullYear()).slice(-2); // Последние 2 цифры года
+                                        return `${day}.${month}.${year}`;
+                                    }
+                                }
+                                if (timeStr) {
+                                    // Только время, попробуем отформатировать
+                                    // Просто обрежем секунды
+                                    const timeParts = timeStr.split(':');
+                                    if (timeParts.length >= 2) {
+                                        return `${timeParts[0]}:${timeParts[1]}`;
+                                    }
+                                    return timeStr; // Возвращаем как есть, если формат неожиданный
+                                }
+                                return 'N/A';
+                            }
+
+                            try {
+                                // Предполагаем, что flight_date это строка в формате YYYY-MM-DD
+                                // а flight_time это строка в формате HH:MM:SS
+                                const dateObj = new Date(`${dateStr}T${timeStr}`); // Создаем объект Date
+
+                                if (isNaN(dateObj)) {
+                                    // Если не удалось создать Date, просто соединяем строки
+                                    // и обрезаем время до HH:MM
+                                    const timeParts = timeStr.split(':');
+                                    let formattedTime = timeStr;
+                                    if (timeParts.length >= 2) {
+                                        formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+                                    }
+                                    return `${dateStr} ${formattedTime}`;
+                                }
+
+                                // Форматируем дату
+                                const day = String(dateObj.getDate()).padStart(2, '0');
+                                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                const year = String(dateObj.getFullYear()).slice(-2); // Последние 2 цифры года
+
+                                // Форматируем время (берем только часы и минуты)
+                                const hours = String(dateObj.getHours()).padStart(2, '0');
+                                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+                                return `${day}.${month}.${year} ${hours}:${minutes}`;
+                            } catch (e) {
+                                console.error("Ошибка форматирования даты/времени:", e, dateStr, timeStr);
+                                // В случае ошибки просто соединяем исходные строки
+                                const timeParts = timeStr.split(':');
+                                let formattedTime = timeStr;
+                                if (timeParts.length >= 2) {
+                                    formattedTime = `${timeParts[0]}:${timeParts[1]}`;
+                                }
+                                return `${dateStr} ${formattedTime}`;
+                            }
+                        }
+
+                        const formattedDateTime = formatFlightDateTime(flight.flight_date, flight.flight_time);
+
+                        const row = `
+                            <tr>
+                                <td>${formattedDateTime}</td>
+                                <td>${flight.target || 'N/A'}</td>
+                                <td class="${resultClass}">${getResultText(flight.result)}</td>
+                            </tr>
+                        `;
+
+                        flightDetailsBody.innerHTML += row;
+                    });
+                }
+                // Скрываем загрузку и показываем контент
+                modalLoading.style.display = 'none';
+                modalContent.style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка загрузки данных о вылетах:', error);
+                modalLoading.style.display = 'none';
+                modalErrorMessage.textContent = `Ошибка загрузки данных: ${error.message}`;
+                modalError.style.display = 'block';
+            }
+        }
+        // Вспомогательные функции
+        function getMedalClass(position) {
+            switch(position) {
+                case 1: return 'medal-gold';
+                case 2: return 'medal-silver';
+                case 3: return 'medal-bronze';
+                default: return '';
+            }
+        }
+        function getMedalIcon(position) {
+            switch(position) {
+                case 1: return '<i class="fas fa-medal medal-gold"></i>';
+                case 2: return '<i class="fas fa-medal medal-silver"></i>';
+                case 3: return '<i class="fas fa-medal medal-bronze"></i>';
+                default: return null;
+            }
+        }
+        function getResultText(result) {
+            switch(result) {
+                case 'destroyed':
+                    return 'Уничтожен';
+                case 'defeated':
+                    return 'Поврежден';
+                case 'not defeated':
+                    return 'Не поврежден';
+                default:
+                    return result;
+            }
+        }
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '<',
+                '>': '>',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Mobile menu toggle - из statistics.html
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (navLinks && mobileMenu) {
+                navLinks.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            }
+        }
+
+        // Функция для загрузки рейтинга по целям
+        window.loadTargetRatingData = async function loadTargetRatingData() {
+            console.log('=== НАЧАЛО loadTargetRatingData ===');
+            console.log('Функция loadTargetRatingData вызвана!');
+            try {
+                console.log('Делаем запрос к /api/target_rating/...');
+                const response = await fetch('/api/target_rating/');
+                console.log('Ответ получен, статус:', response.status, response.statusText);
+                
+                if (response.status === 404) {
+                    console.error('API endpoint не найден! Проверьте URL: /api/target_rating/');
+                    throw new Error('API endpoint не найден (404)');
+                }
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Ошибка ответа:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Данные рейтинга целей получены:', data);
+                console.log('Количество целей:', data.length);
+                
+                if (data.length > 0) {
+                    console.log('Пример первой цели:', data[0]);
+                } else {
+                    console.warn('Массив данных пуст!');
+                }
+                
+                // Проверяем наличие контейнеров
+                const containers = ['target-week-rating', 'target-month-rating', 'target-total-rating'];
+                containers.forEach(id => {
+                    const container = document.getElementById(id);
+                    console.log(`Контейнер ${id}:`, container ? 'найден' : 'НЕ НАЙДЕН!');
+                });
+                
+                // Рендерим данные для всех вкладок
+                console.log('Начинаем рендеринг...');
+                renderTargetRating('week', data);
+                renderTargetRating('month', data);
+                renderTargetRating('total', data);
+                console.log('=== КОНЕЦ loadTargetRatingData (успешно) ===');
+            } catch (error) {
+                console.error('=== ОШИБКА в loadTargetRatingData ===');
+                console.error('Тип ошибки:', error.constructor.name);
+                console.error('Сообщение:', error.message);
+                console.error('Стек:', error.stack);
+                
+                // Показываем ошибку на странице
+                const containers = ['target-week-rating', 'target-month-rating', 'target-total-rating'];
+                containers.forEach(id => {
+                    const container = document.getElementById(id);
+                    if (container) {
+                        container.innerHTML = `<div class="col-12 text-center"><p class="text-muted text-danger">Ошибка загрузки данных: ${error.message}</p></div>`;
+                    } else {
+                        console.error(`Контейнер ${id} не найден для отображения ошибки!`);
+                    }
+                });
+            }
+        };
+        
+        console.log('Функция loadTargetRatingData определена:', typeof window.loadTargetRatingData);
+        
+        // Функция для рендеринга рейтинга целей по периоду
+        function renderTargetRating(period, data) {
+            const containerId = `target-${period}-rating`;
+            const loadingId = `target-${period}-loading`;
+            console.log(`[renderTargetRating] Начало для периода ${period}`);
+            console.log(`[renderTargetRating] Ищем контейнер: ${containerId}`);
+            
+            // Удаляем индикатор загрузки
+            const loadingElement = document.getElementById(loadingId);
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+            
+            let container = document.getElementById(containerId);
+            console.log(`[renderTargetRating] Контейнер найден через getElementById:`, container !== null);
+            
+            if (!container) {
+                console.error(`[renderTargetRating] ОШИБКА: Контейнер ${containerId} не найден через getElementById!`);
+                // Попробуем найти через querySelector
+                container = document.querySelector(`#${containerId}`);
+                console.log(`[renderTargetRating] Альтернативный поиск через querySelector:`, container !== null);
+                
+                if (!container) {
+                    console.error(`[renderTargetRating] КРИТИЧЕСКАЯ ОШИБКА: Контейнер ${containerId} не найден ни одним способом!`);
+                    // Проверяем, показан ли контент
+                    const contentDiv = document.getElementById('content');
+                    console.error(`[renderTargetRating] Элемент content существует:`, contentDiv !== null);
+                    if (contentDiv) {
+                        console.error(`[renderTargetRating] Элемент content видим:`, contentDiv.style.display !== 'none');
+                        console.error(`[renderTargetRating] Стиль display элемента content:`, contentDiv.style.display);
+                    }
+                    return;
+                }
+            }
+            
+            container.innerHTML = '';
+            
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.log(`[renderTargetRating] Нет данных для периода ${period}, data:`, data);
+                container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Нет данных для отображения</p></div>';
+                return;
+            }
+            
+            console.log(`[renderTargetRating] Обрабатываем ${data.length} целей для периода ${period}`);
+            
+            // Сортируем цели по общему количеству уничтожений за выбранный период
+            const sortedTargets = [...data].sort((a, b) => {
+                const totalA = a.totals && a.totals[period] ? a.totals[period] : 0;
+                const totalB = b.totals && b.totals[period] ? b.totals[period] : 0;
+                return totalB - totalA;
+            });
+            
+            console.log(`[renderTargetRating] Отсортировано ${sortedTargets.length} целей для периода ${period}`);
+            
+            if (sortedTargets.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Нет данных для отображения</p></div>';
+                return;
+            }
+            
+            sortedTargets.forEach((target, targetIndex) => {
+                const pilots = target.pilots && target.pilots[period] ? target.pilots[period] : [];
+                const totalDestroyed = target.totals && target.totals[period] ? target.totals[period] : 0;
+                
+                if (pilots.length === 0) {
+                    return; // Пропускаем цели без пилотов за этот период
+                }
+                
+                // Используем точно такой же стиль, как у карточек пилотов
+                const targetCard = `
+                    <div class="col-12">
+                        <div class="pilot-card d-flex align-items-center">
+                            <div class="pilot-position">
+                                <i class="fas fa-bullseye" style="font-size: 1.8rem; color: var(--accent-color);"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h3 class="pilot-name">${escapeHtml(target.target_name)}</h3>
+                                    </div>
+                                    <div class="rating-badge overall-badge">
+                                        ${totalDestroyed}
+                                    </div>
+                                </div>
+                                <div class="pilot-stats mt-3">
+                                    ${pilots.map((pilot, pilotIndex) => {
+                                        const medalClass = getMedalClass(pilotIndex + 1);
+                                        const medalIcon = getMedalIcon(pilotIndex + 1);
+                                        return `
+                                            <div class="stat-item">
+                                                <div class="stat-value">
+                                                    ${medalIcon ? `<i class="fas fa-medal ${medalClass}"></i>` : ''}
+                                                    ${escapeHtml(pilot.pilot_callname)}
+                                                </div>
+                                                <div class="stat-label">Уничтожений: ${pilot.destroyed_count}</div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += targetCard;
+            });
+        }
+        
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM загружен, начинаем загрузку данных...');
+            loadRatingData();
+            // Рейтинг целей будет загружен после показа основного контента (в loadRatingData)
+            // Добавляем обработчик для кнопки обновления
+            const refreshBtn = document.getElementById('refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    console.log('Кнопка обновления нажата');
+                    refreshData();
+                    // Рейтинг целей будет загружен после показа основного контента
+                });
+            } else {
+                console.error('Кнопка refresh-btn не найдена!');
+            }
+            
+            // Добавляем обработчик для поиска
+            const searchInput = document.getElementById('pilot-search');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(searchTimeout);
+                    const searchQuery = e.target.value;
+                    searchTimeout = setTimeout(function() {
+                        // Перерисовываем все активные вкладки с фильтром
+                        const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+                        if (activeTab) {
+                            const tabId = activeTab.getAttribute('data-bs-target');
+                            let period = 'week';
+                            if (tabId === '#month') period = 'month';
+                            else if (tabId === '#total') period = 'total';
+                            
+                            // Перерисовываем все периоды с учетом поиска
+                            ['week', 'month', 'total'].forEach(p => {
+                                if (allRatingData[p]) {
+                                    renderRating(p, allRatingData[p], searchQuery);
+                                }
+                            });
+                        }
+                    }, 300); // Задержка 300мс для оптимизации
+                });
+            }
+
+            // Mobile menu event listeners - из statistics.html
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (mobileMenu) {
+                mobileMenu.addEventListener('click', toggleMobileMenu);
+            }
+
+            // Закрытие меню при клике на ссылку
+            if (navLinks) {
+                const navItems = navLinks.querySelectorAll('a');
+                navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        if (mobileMenu) mobileMenu.classList.remove('active');
+                    });
+                });
+            }
+
+            // Закрытие меню при изменении размера экрана
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    if (navLinks) navLinks.classList.remove('active');
+                    if (mobileMenu) mobileMenu.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+# aeroflot-pvz.ru — статистика без Telegram-бота (VPS 45.155.52.249).
+name: aeroflot
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: aeroflot-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile.aeroflot-pvz:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      webserver:
+        condition: service_started
+    networks:
+      - app_network
+
+  webserver:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: aeroflot-gateway
+    restart: always
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - static_volume:/code/static:rw
+      - ./nginx/conf.d-aeroflot-pvz:/etc/nginx/conf.d:ro
+    expose:
+      - "80"
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: aeroflot-api
+    restart: always
+    volumes:
+      - ./rubicon_admin:/code:rw
+      - static_volume:/code/static:rw
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Moscow
+      - GUNICORN_WORKERS=2
+      - GUNICORN_THREADS=4
+      - GUNICORN_PRELOAD=false
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  database:
+    image: postgres:17-alpine
+    container_name: aeroflot-db
+    restart: always
+    volumes:
+      - content_db:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Moscow
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'",
+        ]
+      interval: 15s
+      timeout: 30s
+      retries: 3
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: aeroflot-redis
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: [ "redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "PING" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app_network
+
+volumes:
+  content_db:
+  static_volume:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app_network:
+    name: aeroflot_network

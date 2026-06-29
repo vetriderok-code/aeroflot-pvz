@@ -1,0 +1,35 @@
+<!-- templates/admin/flights/flight_changelist.html -->
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+<!-- Альтернативно, можно добавить форму прямо на странице -->
+{% block content %}
+{{ block.super }}
+<!-- Добавляем форму загрузки файла под основным контентом -->
+<div style="margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background: #f9f9f9;">
+    <h3>{% trans 'Импорт данных из Excel' %}</h3>
+    {# --- Используем правильное имя URL --- #}
+    <form method="post" action="{% url 'admin:flights_flight_import_xlsx' %}" enctype="multipart/form-data" style="margin-bottom: 20px;">
+        {% csrf_token %}
+        <label for="xlsx_files">Выберите .xlsx или .xlsm файл(ы):</label>
+        <!-- ВАЖНО: name="xlsx_files" и multiple -->
+        <input type="file" name="xlsx_files" id="xlsx_files" accept=".xlsx,.xlsm" required multiple>
+        <input type="submit" value="Импортировать" style="margin-left: 10px; padding: 8px 15px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer;">
+    </form>
+    <p><small>{% trans 'Файл должен содержать данные о вылетах на листе "SVODNAYA" (или втором листе), начиная со строки с заголовками (например, "Время", "Номер вылета" и т.д.). Время до 06:30 будет отнесено к следующему дню. Поддерживаются файлы с макросами (.xlsm).' %}</small></p>
+</div>
+
+<!-- Кнопка очистки БД -->
+<div style="margin-top: 20px; padding: 15px; border: 2px solid #dc3545; border-radius: 5px; background: #fff3cd;">
+    <h3 style="color: #dc3545; margin-top: 0;">⚠️ Очистка базы данных</h3>
+    <p style="color: #856404; margin-bottom: 15px;">
+        Удалить все данные, загруженные из Excel файлов (вылеты, пилоты, дроны, справочники).
+    </p>
+    <a href="{% url 'admin:flights_flight_clear_database' %}" 
+       style="display: inline-block; padding: 10px 20px; background: #dc3545; color: white; 
+              text-decoration: none; border-radius: 5px; font-weight: bold;"
+       onclick="return confirm('Вы уверены, что хотите перейти на страницу очистки БД?');">
+        🗑️ Очистить базу данных
+    </a>
+</div>
+{% endblock %}

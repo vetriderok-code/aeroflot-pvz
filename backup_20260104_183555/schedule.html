@@ -1,0 +1,745 @@
+<!-- templates/schedule_new.html -->
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <title>Расписание пилотов по классам дронов</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Используем стили из old_schedule.html */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        /* Навигация */
+        .top-nav {
+            background: #1f1f1f;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(255, 0, 0, 0.3);
+            border-bottom: 2px solid #ff0000;
+            z-index: 1000;
+            position: relative; /* Для позиционирования меню */
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        .nav-links a {
+            color: #ffcccc;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .user-info {
+            color: #ffcccc;
+            font-size: 14px;
+        }
+        /* Мобильное меню - скрыто по умолчанию */
+        .nav-toggle {
+            display: none;
+            cursor: pointer;
+        }
+        .nav-toggle .bar {
+            display: block;
+            width: 25px;
+            height: 3px;
+            margin: 5px auto;
+            background-color: #ffcccc; /* Цвет как у ссылок */
+            transition: 0.3s;
+        }
+        /* Основной контент */
+        .main-content {
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .page-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        .page-header h1 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .page-header p {
+            color: #aaa;
+            font-size: 16px;
+        }
+        /* Фильтры */
+        .filters-section {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid #333;
+        }
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filter-group label {
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ff6666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filter-group input, .filter-group select {
+            padding: 10px;
+            border: 1px solid #ff3333;
+            border-radius: 4px;
+            font-size: 13px;
+            box-sizing: border-box;
+            background: #2a2a2a;
+            color: #fff;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+        .filter-group select option {
+            background: #2a2a2a;
+            color: #fff;
+        }
+        .date-filters {
+            display: flex;
+            gap: 10px;
+        }
+        .date-filters input {
+            width: calc(50% - 5px);
+        }
+        .filter-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .apply-btn {
+            background: #cc0000;
+            color: white;
+        }
+        .apply-btn:hover {
+            background: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        .reset-btn {
+            background: #333;
+            color: #ff6666;
+        }
+        .reset-btn:hover {
+            background: #444;
+            color: #ff9999;
+            box-shadow: 0 0 10px rgba(255, 102, 102, 0.3);
+        }
+        /* Расписание */
+        .schedule-section {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        .schedule-header {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #fff;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
+        .schedule-table-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #2a2a2a;
+            font-size: 12px;
+            margin-bottom: 30px; /* Отступ между таблицами */
+        }
+        /* ПЕРВАЯ СТРОКА ЗАГОЛОВКОВ - ДАТЫ */
+        .schedule-table .date-header {
+            background: #330000;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #ffcccc;
+            border: 1px solid #ff3333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        /* ВТОРАЯ СТРОКА ЗАГОЛОВКОВ - СМЕНЫ */
+        .schedule-table .shift-header {
+            background: #440000;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #ff9999;
+            border: 1px solid #ff3333;
+            position: sticky;
+            top: 30px; /* Высота первой строки */
+            z-index: 99;
+        }
+        .schedule-table th {
+            background: #330000;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #ffcccc;
+            border: 1px solid #ff3333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .schedule-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #444;
+            min-width: 80px;
+        }
+        .schedule-table tr:nth-child(even) {
+            background: #2d2d2d;
+        }
+        .schedule-table tr:hover {
+            background: #333333;
+        }
+        .pilot-name {
+            background: #330000;
+            color: #ffcccc;
+            font-weight: bold;
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 99;
+            min-width: 150px;
+        }
+        .day-shift {
+            background: rgba(0, 200, 0, 0.3);
+            color: #00cc00;
+            font-weight: bold;
+        }
+        .night-shift {
+            background: rgba(0, 100, 255, 0.3);
+            color: #0066ff;
+            font-weight: bold;
+        }
+        .no-work {
+            background: #2a2a2a;
+            color: #666;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            z-index: 2000;
+            border: 1px solid #ff0000;
+            color: #ff6666;
+            text-align: center;
+        }
+        .no-data {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff3333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff0000;
+        }
+
+        /* Адаптивность для навигации */
+        @media (max-width: 768px) {
+            /* Адаптация навигации */
+            .top-nav {
+                padding: 0 10px;
+                height: 50px;
+            }
+            .nav-links {
+                position: fixed;
+                left: -100%;
+                top: 50px;
+                flex-direction: column;
+                background-color: #1f1f1f;
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+                z-index: 1000;
+                gap: 0;
+            }
+            .nav-links.active {
+                left: 0;
+            }
+            .nav-links a {
+                display: block;
+                padding: 15px;
+                border-bottom: 1px solid rgba(255, 204, 204, 0.1); /* Цвет как у ссылок, но прозрачный */
+            }
+            .nav-toggle {
+                display: block;
+            }
+            .nav-toggle.active .bar:nth-child(2) {
+                opacity: 0;
+            }
+            .nav-toggle.active .bar:nth-child(1) {
+                transform: translateY(8px) rotate(45deg);
+            }
+            .nav-toggle.active .bar:nth-child(3) {
+                transform: translateY(-8px) rotate(-45deg);
+            }
+             /* Адаптация основного контента */
+            .main-content {
+                padding: 10px;
+            }
+            .page-header h1 {
+                font-size: 22px;
+            }
+            .page-header p {
+                font-size: 14px;
+            }
+            .filters-section {
+                padding: 15px;
+            }
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .filter-group label {
+                font-size: 13px;
+            }
+            .filter-group input, .filter-group select {
+                padding: 8px;
+                font-size: 13px;
+            }
+            .filter-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .btn {
+                padding: 10px;
+                font-size: 13px;
+            }
+            .schedule-header {
+                font-size: 18px;
+            }
+            .schedule-table {
+                font-size: 10px;
+            }
+            .pilot-name {
+                min-width: 100px;
+            }
+            .schedule-table td, .schedule-table th {
+                padding: 5px;
+            }
+        }
+        @media (min-width: 769px) {
+           .nav-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Верхняя навигация -->
+    {% include 'includes/navigation.html' %}
+     <div class="nav-toggle" id="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </div>
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📅 Расписание работы</h1>
+            <p>График работы пилотов по сменам</p>
+        </div>
+        <!-- Фильтры -->
+        <div class="filters-section">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>📅 Дата с:</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                <div class="filter-group">
+                    <label>📅 Дата по:</label>
+                    <input type="date" id="dateTo">
+                </div>
+                <div class="filter-group">
+                    <label>👤 Пилот:</label>
+                    <select id="pilotFilter">
+                        <option value="">Все пилоты</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn reset-btn" id="resetFiltersBtn">↺ Сбросить</button>
+                <button class="btn apply-btn" id="applyFiltersBtn">🔍 Применить</button>
+                 <button class="btn reset-btn" id="todayBtn">📅 Сегодня</button>
+            </div>
+        </div>
+        <!-- Индикатор загрузки -->
+        <div id="loading" class="loading" style="display: none;">Загрузка расписания...</div>
+        <!-- Расписание KT -->
+        <div class="schedule-section" id="ktScheduleSection">
+            <div class="schedule-header">
+                <h2>Класс дронов КТ</h2>
+            </div>
+            <div class="schedule-table-container">
+                <table class="schedule-table" id="ktScheduleTable">
+                    <thead>
+                        <tr id="ktDateHeaderRow">
+                            <th class="pilot-name">Пилот (KT)</th>
+                        </tr>
+                        <tr id="ktShiftHeaderRow">
+                             <th class="pilot-name">&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ktScheduleTableBody">
+                        <tr><td colspan="100" class="no-data">Нет данных для отображения расписания KT</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+         <!-- Расписание ST -->
+        <div class="schedule-section" id="stScheduleSection">
+            <div class="schedule-header">
+                <h2>Класс дронов СТ</h2>
+            </div>
+            <div class="schedule-table-container">
+                <table class="schedule-table" id="stScheduleTable">
+                     <thead>
+                        <tr id="stDateHeaderRow">
+                            <th class="pilot-name">Пилот (ST)</th>
+                        </tr>
+                        <tr id="stShiftHeaderRow">
+                             <th class="pilot-name">&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stScheduleTableBody">
+                        <tr><td colspan="100" class="no-data">Нет данных для отображения расписания ST</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <!--<div id="ktScheduleStats" style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 6px; border: 1px solid #ff3333;">
+                <div class="no-data">Нет данных для отображения статистики KT</div>
+            </div>
+            <div id="stScheduleStats" style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 6px; border: 1px solid #ff3333;">
+                <div class="no-data">Нет данных для отображения статистики ST</div>
+            </div>-->
+        </div>
+    </div>
+    <script>
+        // Глобальные переменные
+        let allScheduleData = {}; // Будет содержать весь ответ API
+        let pilotsList = new Set();
+        let datesList = new Set();
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Страница нового расписания загружена');
+            // Назначаем обработчики событий
+            document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+            document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+            document.getElementById('todayBtn').addEventListener('click', setTodayPeriod);
+
+            // Инициализация мобильного меню
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (mobileMenu && navLinks) {
+                mobileMenu.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('active');
+                    navLinks.classList.toggle('active');
+                });
+
+                // Закрытие меню при клике на ссылку
+                const navItems = navLinks.querySelectorAll('a');
+                navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        mobileMenu.classList.remove('active');
+                        navLinks.classList.remove('active');
+                    });
+                });
+            }
+
+            // Закрытие меню при изменении размера экрана
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    if (mobileMenu && navLinks) {
+                        mobileMenu.classList.remove('active');
+                        navLinks.classList.remove('active');
+                    }
+                }
+            });
+
+            // Загружаем начальные данные
+            loadSchedule();
+            // loadFiltersData(); // Загрузим позже из основных данных
+        });
+        // Загрузка расписания
+        async function loadSchedule() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/schedule/');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Получены данные нового расписания:', data);
+                allScheduleData = data; // Сохраняем весь ответ
+                // Заполняем фильтр пилотов из всех пилотов
+                const allPilots = [...new Set([...(data.kt_pilots || []), ...(data.st_pilots || [])])].sort();
+                populatePilotFilter(allPilots);
+                // Обновляем обе таблицы
+                updateScheduleTable('kt', data.kt_schedule || [], data.dates || []);
+                updateScheduleTable('st', data.st_schedule || [], data.dates || []);
+                // Обновляем статистику
+                updateScheduleStats('kt', data);
+                updateScheduleStats('st', data);
+            } catch (error) {
+                console.error('Ошибка загрузки расписания:', error);
+                document.getElementById('loading').innerHTML = 'Ошибка загрузки расписания: ' + error.message;
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 5000);
+            } finally {
+                showLoading(false);
+            }
+        }
+        // Заполнение выпадающего списка пилотов
+        function populatePilotFilter(pilots) {
+            const pilotSelect = document.getElementById('pilotFilter');
+            pilotSelect.innerHTML = '<option value="">Все пилоты</option>';
+            pilots.forEach(pilot => {
+                const option = document.createElement('option');
+                option.value = pilot;
+                option.textContent = pilot;
+                pilotSelect.appendChild(option);
+            });
+        }
+        // Отображение/скрытие индикатора загрузки
+        function showLoading(show) {
+            const loadingEl = document.getElementById('loading');
+            if (show) {
+                loadingEl.style.display = 'block';
+            } else {
+                loadingEl.style.display = 'none';
+            }
+        }
+        // Обновление таблицы расписания (универсальная функция для KT и ST)
+        function updateScheduleTable(prefix, scheduleData, dates) {
+            console.log(`Обновляем таблицу расписания ${prefix.toUpperCase()}...`, scheduleData, dates);
+            const dateHeaderRow = document.getElementById(`${prefix}DateHeaderRow`);
+            const shiftHeaderRow = document.getElementById(`${prefix}ShiftHeaderRow`);
+            const scheduleTableBody = document.getElementById(`${prefix}ScheduleTableBody`);
+            // Очищаем существующие данные
+            dateHeaderRow.innerHTML = `<th class="pilot-name">Пилот (${prefix.toUpperCase()})</th>`;
+            shiftHeaderRow.innerHTML = `<th class="pilot-name">&nbsp;</th>`;
+            scheduleTableBody.innerHTML = '';
+            if (!scheduleData || scheduleData.length === 0) {
+                scheduleTableBody.innerHTML = `<tr><td colspan="100" class="no-data">Нет данных для отображения расписания ${prefix.toUpperCase()}</td></tr>`;
+                return;
+            }
+            console.log(`Даты для расписания ${prefix.toUpperCase()}:`, dates);
+            // Создаем первую строку шапки (даты)
+            dates.forEach(date => {
+                const dateObj = new Date(date);
+                const dateFormatted = dateObj.toLocaleDateString('ru-RU');
+                const dateHeader = document.createElement('th');
+                dateHeader.className = 'date-header';
+                dateHeader.colSpan = 2; // Каждая дата занимает 2 колонки (день + ночь)
+                dateHeader.textContent = dateFormatted;
+                dateHeaderRow.appendChild(dateHeader);
+            });
+            // Создаем вторую строку шапки (смены)
+            dates.forEach(date => {
+                const nightShiftHeader = document.createElement('th');
+                nightShiftHeader.className = 'shift-header';
+                nightShiftHeader.textContent = 'Ночь (20:00-8:00)';
+                shiftHeaderRow.appendChild(nightShiftHeader);
+                const dayShiftHeader = document.createElement('th');
+                dayShiftHeader.className = 'shift-header';
+                dayShiftHeader.textContent = 'День (8:00-20:00)';
+                shiftHeaderRow.appendChild(dayShiftHeader);
+            });
+            // Создаем строки для каждого пилота
+            scheduleData.forEach(pilotSchedule => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="pilot-name">${pilotSchedule.pilot_name}</td>`;
+                // Для каждой даты отображаем количество вылетов
+                pilotSchedule.dates.forEach(dateInfo => {
+                    // ВАЖНО: Порядок колонок - НОЧЬ, затем ДЕНЬ, как в шапке
+                    // Ячейка для ночной смены
+                    const nightCell = document.createElement('td');
+                    if (dateInfo.night_flights) {
+                        nightCell.className = 'night-shift';
+                        nightCell.textContent = dateInfo.night_flights; // Выводим количество вылетов
+                    } else {
+                        nightCell.className = 'no-work';
+                        nightCell.textContent = '-';
+                    }
+                    row.appendChild(nightCell);
+                    // Ячейка для дневной смены
+                    const dayCell = document.createElement('td');
+                    if (dateInfo.day_flights) {
+                        dayCell.className = 'day-shift';
+                        dayCell.textContent = dateInfo.day_flights; // Выводим количество вылетов
+                    } else {
+                        dayCell.className = 'no-work';
+                        dayCell.textContent = '-';
+                    }
+                    row.appendChild(dayCell);
+                });
+                scheduleTableBody.appendChild(row);
+            });
+            console.log(`Таблица расписания ${prefix.toUpperCase()} обновлена успешно!`);
+        }
+        // Обновление статистики расписания (универсальная функция для KT и ST)
+        function updateScheduleStats(prefix, fullData) {
+            const statsContent = document.getElementById(`${prefix}ScheduleStats`);
+            // Проверяем, существует ли элемент статистики
+            if (!statsContent) {
+                console.warn(`Элемент ${prefix}ScheduleStats не найден, пропускаем обновление статистики`);
+                return;
+            }
+            const scheduleData = fullData[`${prefix}_schedule`] || [];
+            const totalPilots = fullData[`total_${prefix}_pilots`] || 0;
+            const datesCount = fullData.dates ? fullData.dates.length : 0;
+            if (!scheduleData || scheduleData.length === 0) {
+                statsContent.innerHTML = `<div class="no-data">Нет данных для отображения статистики ${prefix.toUpperCase()}</div>`;
+                return;
+            }
+            let html = '';
+            html += `<div style="margin-bottom: 10px;"><strong>Статистика расписания ${prefix.toUpperCase()}:</strong></div>`;
+            html += `<div class="stats-item">Всего пилотов (${prefix.toUpperCase()}): ${totalPilots}</div>`;
+            html += `<div class="stats-item">Период: ${datesCount} дней</div>`;
+            // Статистика по сменам
+            let totalDayShifts = 0;
+            let totalNightShifts = 0;
+            let totalFlights = 0;
+            scheduleData.forEach(pilot => {
+                pilot.dates.forEach(date => {
+                    if (date.day_flights) totalDayShifts++;
+                    if (date.night_flights) totalNightShifts++;
+                    totalFlights += date.flights_count || 0;
+                });
+            });
+            html += '<div style="margin: 10px 0; border-top: 1px solid #ff3333; padding-top: 10px;"></div>';
+            html += '<div style="margin-bottom: 10px;"><strong>По сменам:</strong></div>';
+            html += `<div class="stats-item type"><span>Дневные смены:</span> <span class="stats-count">${totalDayShifts}</span></div>`;
+            html += `<div class="stats-item type"><span>Ночные смены:</span> <span class="stats-count">${totalNightShifts}</span></div>`;
+            html += `<div class="stats-item type"><span>Всего вылетов:</span> <span class="stats-count">${totalFlights}</span></div>`;
+            statsContent.innerHTML = html;
+        }
+        // Применение фильтров
+        function applyFilters() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const pilotFilter = document.getElementById('pilotFilter').value;
+            console.log('Применяем фильтры:', { dateFrom, dateTo, pilotFilter });
+            // Формируем URL с параметрами
+            const url = new URL('/api/schedule/', window.location.origin);
+            if (dateFrom) url.searchParams.append('date_from', dateFrom);
+            if (dateTo) url.searchParams.append('date_to', dateTo);
+            if (pilotFilter) url.searchParams.append('pilot', pilotFilter);
+            console.log('Запрос к API:', url.toString());
+            fetch(url.toString())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Данные после фильтрации:', data);
+                    // Обновляем обе таблицы с отфильтрованными данными
+                    updateScheduleTable('kt', data.kt_schedule || [], data.dates || []);
+                    updateScheduleTable('st', data.st_schedule || [], data.dates || []);
+                    // Обновляем статистику
+                    updateScheduleStats('kt', data);
+                    updateScheduleStats('st', data);
+                })
+                .catch(error => {
+                    console.error('Ошибка применения фильтров:', error);
+                    alert('Ошибка применения фильтров: ' + error.message);
+                });
+        }
+        // Сброс фильтров
+        function resetFilters() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('pilotFilter').value = '';
+            console.log('Фильтры сброшены');
+            loadSchedule(); // Загружаем все данные без фильтров
+        }
+        // Установка периода "Сегодня"
+        function setTodayPeriod() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFrom').value = today;
+            document.getElementById('dateTo').value = today;
+            applyFilters();
+        }
+    </script>
+</body>
+</html>

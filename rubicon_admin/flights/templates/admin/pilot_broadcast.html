@@ -1,0 +1,101 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_urls static %}
+
+{% block title %}Рассылка сообщений{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:flights_pilot_changelist' %}">Pilots</a>
+    &rsaquo; Рассылка сообщений
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h1>Рассылка сообщений в Telegram</h1>
+    
+    <div class="module">
+        <h2>Выбранные пилоты ({{ pilot_count }})</h2>
+        <ul>
+            {% for pilot in pilots %}
+            <li>{{ pilot.callname }} ({{ pilot.tg_id }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="module">
+            <h2>Сообщение</h2>
+            <div class="form-row">
+                <textarea name="message" rows="5" cols="80" 
+                         placeholder="Введите текст сообщения для отправки выбранным пилотам..."
+                         required></textarea>
+            </div>
+            
+            <div class="submit-row">
+                <input type="hidden" name="action" value="send_telegram_broadcast">
+                {% for pilot in pilots %}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ pilot.pk }}">
+                {% endfor %}
+                
+                <input type="submit" name="apply" value="Отправить сообщения" class="default">
+                <a href="{% url 'admin:flights_pilot_changelist' %}" class="button cancel-link">Отмена</a>
+            </div>
+        </div>
+    </form>
+    
+    <div class="module">
+        <h3>Информация</h3>
+        <p>Сообщение будет отправлено {{ pilot_count }} пилотам через Telegram бот.</p>
+        <p>Убедитесь, что сообщение корректно оформлено и не нарушает правила Telegram.</p>
+    </div>
+</div>
+
+<style>
+.module {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.form-row {
+    margin-bottom: 15px;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+}
+
+.submit-row {
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: right;
+}
+
+.button, .cancel-link {
+    padding: 8px 15px;
+    margin-left: 10px;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.default {
+    background: #79aec8;
+    color: white;
+    border: none;
+}
+
+.cancel-link {
+    background: #ddd;
+    color: #333;
+}
+</style>
+{% endblock %}

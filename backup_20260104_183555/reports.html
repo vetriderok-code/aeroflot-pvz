@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <title>Отчеты</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        .top-nav {
+            background: #1f1f1f;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid #333;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            background: #2d2d2d;
+            color: #bb86fc;
+        }
+        .main-content {
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .page-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header h1 {
+            font-size: 28px;
+            color: #bb86fc;
+        }
+        .filters-panel {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .filters-panel h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #bb86fc;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filter-group label {
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 12px;
+        }
+        .filter-group input,
+        .filter-group select {
+            padding: 8px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        .filter-group select[multiple] {
+            min-height: 100px;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #6200ee;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #7c3aed;
+        }
+        .btn-success {
+            background: #03dac6;
+            color: #000;
+        }
+        .btn-success:hover {
+            background: #18ffff;
+        }
+        .btn-danger {
+            background: #b00020;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #cf6679;
+        }
+        .btn-secondary {
+            background: #444;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #555;
+        }
+        .report-content {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .report-section {
+            margin-bottom: 30px;
+        }
+        .report-section h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #bb86fc;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #2d2d2d;
+        }
+        table th {
+            background: #366092;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #444;
+        }
+        table tr:hover {
+            background: #333;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+        }
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navigation.html' %}
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📊 Отчеты</h1>
+            <div class="export-buttons">
+                <button class="btn btn-success" onclick="exportToExcel()" id="exportExcelBtn" disabled>
+                    📄 Экспорт в Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="filters-panel">
+            <h2>Фильтры</h2>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Дата с:</label>
+                    <input type="date" id="dateFrom" />
+                </div>
+                <div class="filter-group">
+                    <label>Дата по:</label>
+                    <input type="date" id="dateTo" />
+                </div>
+                <div class="filter-group">
+                    <label>Пилоты:</label>
+                    <input type="text" id="pilotsSearch" placeholder="🔍 Поиск пилотов..." style="width: 100%; padding: 6px; margin-bottom: 5px; background: #2d2d2d; border: 1px solid #444; color: #e0e0e0; border-radius: 3px; font-size: 13px;" oninput="filterSelectOptions('pilotsFilter', this.value)">
+                    <select id="pilotsFilter" multiple style="max-height: 150px;" onchange="onPilotChange()">
+                        <!-- Заполнится динамически -->
+                    </select>
+                </div>
+                <div class="filter-group" id="targetsFilterGroup" style="display: none;">
+                    <label>Типы целей:</label>
+                    <input type="text" id="targetsSearch" placeholder="🔍 Поиск целей..." style="width: 100%; padding: 6px; margin-bottom: 5px; background: #2d2d2d; border: 1px solid #444; color: #e0e0e0; border-radius: 3px; font-size: 13px;" oninput="filterSelectOptions('targetsFilter', this.value)">
+                    <select id="targetsFilter" multiple style="max-height: 150px;" onchange="onTargetChange()">
+                        <!-- Заполнится динамически -->
+                    </select>
+                </div>
+                <div class="filter-group" id="dronesFilterGroup" style="display: none;">
+                    <label>Типы дронов:</label>
+                    <input type="text" id="dronesSearch" placeholder="🔍 Поиск дронов..." style="width: 100%; padding: 6px; margin-bottom: 5px; background: #2d2d2d; border: 1px solid #444; color: #e0e0e0; border-radius: 3px; font-size: 13px;" oninput="filterSelectOptions('dronesFilter', this.value)">
+                    <select id="dronesFilter" multiple style="max-height: 150px;" onchange="onDroneChange()">
+                        <!-- Заполнится динамически -->
+                    </select>
+                </div>
+                <div class="filter-group" id="resultsFilterGroup" style="display: none;">
+                    <label>Результат:</label>
+                    <input type="text" id="resultsSearch" placeholder="🔍 Поиск результатов..." style="width: 100%; padding: 6px; margin-bottom: 5px; background: #2d2d2d; border: 1px solid #444; color: #e0e0e0; border-radius: 3px; font-size: 13px;" oninput="filterSelectOptions('resultsFilter', this.value)">
+                    <select id="resultsFilter" multiple style="max-height: 150px;">
+                        <option value="destroyed">Уничтожено</option>
+                        <option value="defeated">Поражено</option>
+                        <option value="not defeated">Не поражено</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-buttons">
+                <button class="btn btn-primary" onclick="loadReport()">Применить фильтры</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Сбросить</button>
+            </div>
+        </div>
+
+        <div id="reportContent" class="report-content">
+            <div class="loading" style="padding: 20px; text-align: center;">
+                <h3 style="color: #03dac6; margin-bottom: 15px;">📊 Отчеты</h3>
+                <p>Выберите фильтры и нажмите "Применить фильтры" для генерации отчета</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentReportData = null;
+        let currentFilters = {};
+        
+        // Функция для фильтрации опций в select по тексту поиска
+        function filterSelectOptions(selectId, searchText) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            
+            const searchLower = searchText.toLowerCase().trim();
+            const options = select.querySelectorAll('option');
+            
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                if (!searchLower || text.includes(searchLower)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+
+        // Функция нормализации ТОЛЬКО для создания ключа группировки (как на сервере)
+        function normalizeTargetName(targetName) {
+            if (!targetName) return 'не указана';
+            const targetStr = String(targetName).trim();
+            if (!targetStr) return 'не указана';
+            // Простая нормализация для сравнения: нижний регистр, нормализация пробелов
+            const targetNormalized = targetStr.toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            // Объединяем "Не указано", "Не указана" и т.д.
+            if (['не указано', 'не указана', 'неуказано', 'неуказана', 'none', 'null', ''].includes(targetNormalized)) {
+                return 'не указана';
+            }
+            
+            // Объединяем похожие варианты (только для ключа группировки)
+            if (targetNormalized.includes('автомобильн') || targetNormalized.includes('автотехник') || 
+                targetNormalized.includes('авто техник') || targetNormalized.includes('авто-техник')) {
+                return 'автомобильная техника';
+            }
+            if (targetNormalized.includes('пвх')) {
+                const match = targetNormalized.match(/пвх\s*[-]?\s*(\d+[и]?)/i);
+                if (match) {
+                    return `пвх-${match[1].toLowerCase()}`;
+                }
+                return 'пвх';
+            }
+            
+            // Для остальных - просто нормализуем пробелы и регистр для сравнения
+            return targetNormalized;
+        }
+        
+        function normalizeDroneName(droneName) {
+            if (!droneName) return 'не указан';
+            const droneStr = String(droneName).trim();
+            if (!droneStr) return 'не указан';
+            // Простая нормализация для сравнения: нижний регистр, нормализация пробелов
+            const droneNormalized = droneStr.toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            // Объединяем "Не указано", "Не указан" и т.д.
+            if (['не указано', 'не указан', 'неуказано', 'неуказан', 'none', 'null', ''].includes(droneNormalized)) {
+                return 'не указан';
+            }
+            
+            // Объединяем похожие варианты (только для ключа группировки)
+            if (droneNormalized.includes('пвх')) {
+                const match = droneNormalized.match(/пвх\s*[-]?\s*(\d+[и]?)/i);
+                if (match) {
+                    return `пвх-${match[1].toLowerCase()}`;
+                }
+                return 'пвх';
+            }
+            if (droneNormalized.includes('молния')) {
+                const match = droneNormalized.match(/молния\s*[-]?\s*(\d+[дт]?)/i);
+                if (match) {
+                    return `молния-${match[1].toLowerCase()}`;
+                }
+                return 'молния';
+            }
+            // КВН - ищем КВН с номером или буквой (КВН-Т, КВН-23, КВН-23Т и т.д.)
+            if (droneNormalized.includes('квн')) {
+                const match = droneNormalized.match(/квн\s*[-]?\s*(\d+[тт]?|[тт]|\d+)/i);
+                if (match) {
+                    return `квн-${match[1].toLowerCase()}`;
+                }
+                return 'квн';
+            }
+            
+            // Для остальных - удаляем дефисы для сравнения, чтобы X-51 и X51 считались одним
+            const droneWithoutDash = droneNormalized.replace(/-/g, '');
+            return droneWithoutDash;
+        }
+
+        // Каскадные фильтры: показываем следующий фильтр только после выбора предыдущего
+        async function loadFilters() {
+            try {
+                const pilotsSelect = document.getElementById('pilotsFilter');
+                pilotsSelect.innerHTML = '';
+                
+                const response = await fetch('/api/filters/');
+                const data = await response.json();
+                
+                // Заполняем только фильтры пилотов
+                data.pilots.forEach(pilot => {
+                    const option = document.createElement('option');
+                    option.value = pilot.id;
+                    option.textContent = pilot.callname;
+                    pilotsSelect.appendChild(option);
+                });
+                
+                // Скрываем остальные фильтры
+                document.getElementById('targetsFilterGroup').style.display = 'none';
+                document.getElementById('dronesFilterGroup').style.display = 'none';
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Ошибка загрузки фильтров:', error);
+            }
+        }
+        
+        async function onPilotChange() {
+            const pilotsSelect = document.getElementById('pilotsFilter');
+            const selectedPilotIds = Array.from(pilotsSelect.selectedOptions).map(o => o.value);
+            
+            // Очищаем выбранные значения в зависимых фильтрах
+            document.getElementById('targetsFilter').selectedIndex = -1;
+            document.getElementById('dronesFilter').selectedIndex = -1;
+            document.getElementById('resultsFilter').selectedIndex = -1;
+            
+            if (selectedPilotIds.length === 0) {
+                // Если пилоты не выбраны, скрываем все зависимые фильтры
+                document.getElementById('targetsFilterGroup').style.display = 'none';
+                document.getElementById('dronesFilterGroup').style.display = 'none';
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Получаем цели для выбранных пилотов
+                const params = new URLSearchParams();
+                selectedPilotIds.forEach(id => params.append('pilot_id', id));
+                
+                const response = await fetch(`/api/filters/?${params.toString()}`);
+                const data = await response.json();
+                
+                // Обновляем фильтр целей
+                updateTargetsFilter(data.targets || []);
+                
+                // Показываем фильтр целей, скрываем остальные
+                document.getElementById('targetsFilterGroup').style.display = 'flex';
+                document.getElementById('dronesFilterGroup').style.display = 'none';
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Ошибка обновления фильтров целей:', error);
+            }
+        }
+        
+        async function onTargetChange() {
+            const pilotsSelect = document.getElementById('pilotsFilter');
+            const targetsSelect = document.getElementById('targetsFilter');
+            const selectedPilotIds = Array.from(pilotsSelect.selectedOptions).map(o => o.value);
+            const selectedTargets = Array.from(targetsSelect.selectedOptions).map(o => o.value);
+            
+            // Очищаем выбранные значения в зависимых фильтрах
+            document.getElementById('dronesFilter').selectedIndex = -1;
+            document.getElementById('resultsFilter').selectedIndex = -1;
+            
+            if (selectedPilotIds.length === 0 || selectedTargets.length === 0) {
+                // Если пилоты или цели не выбраны, скрываем зависимые фильтры
+                document.getElementById('dronesFilterGroup').style.display = 'none';
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Получаем дроны для выбранных пилотов и целей
+                const params = new URLSearchParams();
+                selectedPilotIds.forEach(id => params.append('pilot_id', id));
+                selectedTargets.forEach(t => params.append('target_type', t));
+                
+                const response = await fetch(`/api/filters/?${params.toString()}`);
+                const data = await response.json();
+                
+                // Обновляем фильтр дронов
+                updateDronesFilter(data.drones || []);
+                
+                // Показываем фильтр дронов, скрываем фильтр результатов
+                document.getElementById('dronesFilterGroup').style.display = 'flex';
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Ошибка обновления фильтров дронов:', error);
+            }
+        }
+        
+        async function onDroneChange() {
+            const pilotsSelect = document.getElementById('pilotsFilter');
+            const targetsSelect = document.getElementById('targetsFilter');
+            const dronesSelect = document.getElementById('dronesFilter');
+            const selectedPilotIds = Array.from(pilotsSelect.selectedOptions).map(o => o.value);
+            const selectedTargets = Array.from(targetsSelect.selectedOptions).map(o => o.value);
+            const selectedDrones = Array.from(dronesSelect.selectedOptions).map(o => o.value);
+            
+            // Очищаем выбранные значения в зависимом фильтре
+            document.getElementById('resultsFilter').selectedIndex = -1;
+            
+            if (selectedPilotIds.length === 0 || selectedTargets.length === 0 || selectedDrones.length === 0) {
+                // Если все не выбрано, скрываем фильтр результатов
+                document.getElementById('resultsFilterGroup').style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Получаем результаты для выбранных пилотов, целей и дронов
+                const params = new URLSearchParams();
+                selectedPilotIds.forEach(id => params.append('pilot_id', id));
+                selectedTargets.forEach(t => params.append('target_type', t));
+                selectedDrones.forEach(d => params.append('drone_type', d));
+                
+                const response = await fetch(`/api/filters/?${params.toString()}`);
+                const data = await response.json();
+                
+                // Обновляем фильтр результатов
+                updateResultsFilter(data.results || []);
+                
+                // Показываем фильтр результатов
+                document.getElementById('resultsFilterGroup').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Ошибка обновления фильтров результатов:', error);
+            }
+        }
+        
+        function updateTargetsFilter(targets) {
+            const targetsSelect = document.getElementById('targetsFilter');
+            const normalizedTargets = new Set();
+            
+            // Сохраняем выбранные значения
+            const selectedValues = Array.from(targetsSelect.selectedOptions).map(o => o.value);
+            
+            targetsSelect.innerHTML = '';
+            
+            targets.forEach(target => {
+                const normalizedKey = normalizeTargetName(target);
+                if (!normalizedTargets.has(normalizedKey)) {
+                    normalizedTargets.add(normalizedKey);
+                    const option = document.createElement('option');
+                    option.value = target;
+                    option.textContent = target;
+                    if (selectedValues.includes(target)) {
+                        option.selected = true;
+                    }
+                    targetsSelect.appendChild(option);
+                }
+            });
+        }
+        
+        function updateDronesFilter(drones) {
+            const dronesSelect = document.getElementById('dronesFilter');
+            const normalizedDrones = new Set();
+            
+            // Сохраняем выбранные значения
+            const selectedValues = Array.from(dronesSelect.selectedOptions).map(o => o.value);
+            
+            dronesSelect.innerHTML = '';
+            
+            drones.forEach(drone => {
+                const normalizedKey = normalizeDroneName(drone);
+                if (!normalizedDrones.has(normalizedKey)) {
+                    normalizedDrones.add(normalizedKey);
+                    const option = document.createElement('option');
+                    option.value = drone;
+                    option.textContent = drone;
+                    if (selectedValues.includes(drone)) {
+                        option.selected = true;
+                    }
+                    dronesSelect.appendChild(option);
+                }
+            });
+        }
+        
+        function updateResultsFilter(results) {
+            const resultsSelect = document.getElementById('resultsFilter');
+            const selectedValues = Array.from(resultsSelect.selectedOptions).map(o => o.value);
+            
+            // Маппинг стандартных значений результатов
+            const resultMapping = {
+                'destroyed': 'Уничтожено',
+                'defeated': 'Поражено',
+                'not defeated': 'Не поражено',
+                'not_defeated': 'Не поражено'  // Альтернативный вариант
+            };
+            
+            // Нормализуем результаты на клиенте
+            const normalizedResults = new Set();
+            if (results && results.length > 0) {
+                results.forEach(result => {
+                    if (!result) return;
+                    
+                    const resultLower = String(result).trim().toLowerCase();
+                    // Нормализуем к стандартным значениям
+                    if (resultLower.includes('destroyed') || resultLower.includes('уничтожен')) {
+                        normalizedResults.add('destroyed');
+                    } else if (resultLower.includes('defeated') || resultLower.includes('поражен')) {
+                        normalizedResults.add('defeated');
+                    } else if (resultLower.includes('not') || resultLower.includes('не поражен') || resultLower.includes('промах')) {
+                        normalizedResults.add('not defeated');
+                    } else if (resultLower === 'destroyed') {
+                        normalizedResults.add('destroyed');
+                    } else if (resultLower === 'defeated') {
+                        normalizedResults.add('defeated');
+                    } else if (resultLower === 'not defeated' || resultLower === 'not_defeated') {
+                        normalizedResults.add('not defeated');
+                    }
+                });
+            }
+            
+            resultsSelect.innerHTML = '';
+            
+            // Определенный порядок отображения
+            const orderedResults = ['destroyed', 'defeated', 'not defeated'];
+            
+            // Показываем только нормализованные результаты
+            orderedResults.forEach(result => {
+                if (normalizedResults.has(result) || normalizedResults.size === 0) {
+                    const option = document.createElement('option');
+                    option.value = result;
+                    option.textContent = resultMapping[result] || result;
+                    // Проверяем, был ли этот вариант выбран (с учетом нормализации)
+                    if (selectedValues.includes(result) || 
+                        (result === 'not defeated' && (selectedValues.includes('not_defeated') || selectedValues.includes('not defeated')))) {
+                        option.selected = true;
+                    }
+                    resultsSelect.appendChild(option);
+                }
+            });
+        }
+
+        async function loadReport() {
+            const reportContent = document.getElementById('reportContent');
+            reportContent.innerHTML = '<div class="loading">Загрузка данных...</div>';
+            
+            // Собираем фильтры
+            const filters = {
+                date_from: document.getElementById('dateFrom').value || null,
+                date_to: document.getElementById('dateTo').value || null,
+                pilot_id: Array.from(document.getElementById('pilotsFilter').selectedOptions).map(o => o.value),
+                target_type: Array.from(document.getElementById('targetsFilter').selectedOptions).map(o => o.value),
+                drone_type: Array.from(document.getElementById('dronesFilter').selectedOptions).map(o => o.value),
+                result: Array.from(document.getElementById('resultsFilter').selectedOptions).map(o => o.value),
+            };
+            
+            currentFilters = filters;
+            
+            // Формируем URL с параметрами
+            const params = new URLSearchParams();
+            if (filters.date_from) params.append('date_from', filters.date_from);
+            if (filters.date_to) params.append('date_to', filters.date_to);
+            filters.pilot_id.forEach(id => params.append('pilot_id', id));
+            filters.target_type.forEach(t => params.append('target_type', t));
+            filters.drone_type.forEach(d => params.append('drone_type', d));
+            filters.result.forEach(r => params.append('result', r));
+            
+            try {
+                const response = await fetch(`/api/reports/data/?${params.toString()}`);
+                const data = await response.json();
+                currentReportData = data;
+                
+                renderReport(data);
+                
+                // Активируем кнопки экспорта
+                document.getElementById('exportExcelBtn').disabled = false;
+            } catch (error) {
+                reportContent.innerHTML = `<div class="loading" style="color: #b00020;">Ошибка загрузки данных: ${error.message}</div>`;
+                console.error('Ошибка загрузки отчета:', error);
+            }
+        }
+
+        function renderReport(data) {
+            const reportContent = document.getElementById('reportContent');
+            console.log('=== РЕНДЕРИМ ОТЧЕТ (версия 2.0) ===');
+            console.log('Количество записей:', {
+                pilots: data.pilots.length,
+                targets: data.targets.length,
+                drones: data.drones ? data.drones.length : 0
+            });
+            console.log('Пример целей:', data.targets.slice(0, 5).map(t => t.target));
+            console.log('Пример дронов:', data.drones ? data.drones.slice(0, 5).map(d => d.drone) : []);
+            let html = '';
+            
+            // Общая статистика
+            html += '<div class="report-section">';
+            html += '<h3>Общая статистика</h3>';
+            html += '<div class="stats-grid">';
+            html += `<div class="stat-card"><div class="label">Всего вылетов</div><div class="value">${data.summary.total_flights}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Уничтожено</div><div class="value">${data.summary.destroyed_flights}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Поражено</div><div class="value">${data.summary.defeated_flights}</div></div>`;
+            html += `<div class="stat-card"><div class="label">Не поражено</div><div class="value">${data.summary.not_defeated_flights}</div></div>`;
+            html += `<div class="stat-card"><div class="label">% Уничтожения</div><div class="value">${data.summary.destruction_rate_percent}%</div></div>`;
+            html += `<div class="stat-card"><div class="label">% Успеха</div><div class="value">${data.summary.success_rate_percent}%</div></div>`;
+            html += '</div>';
+            html += '</div>';
+            
+            // Статистика по пилотам
+            if (data.pilots.length > 0) {
+                html += '<div class="report-section">';
+                html += '<h3>Статистика по пилотам</h3>';
+                html += '<div class="table-container">';
+                html += '<table id="pilotsTable"><thead><tr>';
+                html += '<th style="min-width: 200px;"><input type="text" class="column-search" placeholder="🔍 Быстрый поиск..." data-column="0" style="width: 100%; padding: 8px; background: #2d2d2d; border: 2px solid #03dac6; color: #e0e0e0; border-radius: 4px; font-size: 13px;"></th>';
+                html += '<th>Всего</th><th>Уничтожено</th><th>Поражено</th><th>Не поражено</th><th>% Успеха</th>';
+                html += '</tr></thead><tbody>';
+                data.pilots.forEach(pilot => {
+                    html += `<tr>
+                        <td>${pilot.pilot_name}</td>
+                        <td>${pilot.total_flights}</td>
+                        <td>${pilot.destroyed_flights}</td>
+                        <td>${pilot.defeated_flights}</td>
+                        <td>${pilot.not_defeated_flights}</td>
+                        <td>${pilot.success_rate_percent}%</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+                html += `<div style="margin-top: 10px; padding: 8px; background: #2d2d2d; border-radius: 4px; color: #03dac6; font-size: 12px; font-weight: bold;">📊 Всего записей: ${data.pilots.length}</div>`;
+                html += '</div>';
+                
+                // Диаграмма по пилотам
+                html += '<div class="chart-container"><canvas id="pilotsChart"></canvas></div>';
+                html += '</div>';
+            }
+            
+            // Статистика по целям
+            if (data.targets.length > 0) {
+                html += '<div class="report-section">';
+                html += '<h3>Статистика по целям</h3>';
+                html += '<div class="table-container">';
+                html += '<table id="targetsTable"><thead><tr>';
+                html += '<th style="min-width: 200px;"><input type="text" class="column-search" placeholder="🔍 Быстрый поиск..." data-column="0" style="width: 100%; padding: 8px; background: #2d2d2d; border: 2px solid #03dac6; color: #e0e0e0; border-radius: 4px; font-size: 13px;"></th>';
+                html += '<th>Всего</th><th>Уничтожено</th><th>Поражено</th><th>Не поражено</th>';
+                html += '</tr></thead><tbody>';
+                // Отображаем ВСЕ цели без ограничений
+                data.targets.forEach(target => {
+                    html += `<tr>
+                        <td>${target.target}</td>
+                        <td>${target.total_flights}</td>
+                        <td>${target.destroyed_flights}</td>
+                        <td>${target.defeated_flights}</td>
+                        <td>${target.not_defeated_flights}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+                html += `<div style="margin-top: 10px; padding: 8px; background: #2d2d2d; border-radius: 4px; color: #03dac6; font-size: 12px; font-weight: bold;">📊 Всего записей: ${data.targets.length} (после нормализации)</div>`;
+                html += '</div>';
+                
+                // Диаграмма по целям
+                html += '<div class="chart-container"><canvas id="targetsChart"></canvas></div>';
+                html += '</div>';
+            }
+            
+            // Статистика по дронам
+            if (data.drones.length > 0) {
+                html += '<div class="report-section">';
+                html += '<h3>Статистика по дронам</h3>';
+                html += '<div class="table-container">';
+                html += '<table id="dronesTable"><thead><tr>';
+                html += '<th style="min-width: 200px;"><input type="text" class="column-search" placeholder="🔍 Быстрый поиск..." data-column="0" style="width: 100%; padding: 8px; background: #2d2d2d; border: 2px solid #03dac6; color: #e0e0e0; border-radius: 4px; font-size: 13px;"></th>';
+                html += '<th>Всего</th><th>Уничтожено</th><th>Поражено</th><th>Не поражено</th>';
+                html += '</tr></thead><tbody>';
+                // Отображаем ВСЕ дроны без ограничений
+                data.drones.forEach(drone => {
+                    html += `<tr>
+                        <td>${drone.drone}</td>
+                        <td>${drone.total_flights}</td>
+                        <td>${drone.destroyed_flights}</td>
+                        <td>${drone.defeated_flights}</td>
+                        <td>${drone.not_defeated_flights}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+                html += `<div style="margin-top: 10px; padding: 8px; background: #2d2d2d; border-radius: 4px; color: #03dac6; font-size: 12px; font-weight: bold;">📊 Всего записей: ${data.drones.length} (после нормализации)</div>`;
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            // Динамика по датам
+            if (data.daily_trend.length > 0) {
+                html += '<div class="report-section">';
+                html += '<h3>Динамика по датам</h3>';
+                html += '<div class="chart-container"><canvas id="dailyChart"></canvas></div>';
+                html += '</div>';
+            }
+            
+            reportContent.innerHTML = html;
+            
+            console.log('Отчет отрендерен. Количество записей:', {
+                pilots: data.pilots.length,
+                targets: data.targets.length,
+                drones: data.drones ? data.drones.length : 0
+            });
+            
+            // Рендерим диаграммы (ограничиваем только для диаграмм, не для таблиц)
+            if (data.pilots.length > 0) {
+                renderPilotsChart(data.pilots.slice(0, 20)); // Топ-20 для диаграммы
+            }
+            if (data.targets.length > 0) {
+                renderTargetsChart(data.targets.slice(0, 15)); // Топ-15 для диаграммы
+            }
+            if (data.daily_trend.length > 0) {
+                renderDailyChart(data.daily_trend);
+            }
+            
+            // Инициализируем поиск по таблицам после рендеринга
+            // Используем setTimeout, чтобы убедиться, что DOM обновлен
+            setTimeout(() => {
+                setupTableSearch();
+                console.log('Поиск по таблицам инициализирован. Найдено полей поиска:', document.querySelectorAll('.column-search').length);
+            }, 200);
+        }
+
+        function renderPilotsChart(pilots) {
+            const ctx = document.getElementById('pilotsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: pilots.slice(0, 20).map(p => p.pilot_name),
+                    datasets: [{
+                        label: 'Всего вылетов',
+                        data: pilots.slice(0, 20).map(p => p.total_flights),
+                        backgroundColor: '#366092'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+        
+        // Функция поиска по столбцам таблицы
+        function setupTableSearch() {
+            // Удаляем старые обработчики, если есть
+            const existingHandlers = document.querySelectorAll('.column-search');
+            existingHandlers.forEach(input => {
+                input.removeEventListener('input', handleSearch);
+            });
+            
+            // Добавляем обработчики для всех полей поиска
+            function handleSearch(e) {
+                const searchInput = e.target;
+                if (!searchInput.classList.contains('column-search')) return;
+                
+                const table = searchInput.closest('table');
+                if (!table) return;
+                
+                const columnIndex = parseInt(searchInput.dataset.column);
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                
+                const rows = table.querySelectorAll('tbody tr');
+                let visibleCount = 0;
+                rows.forEach(row => {
+                    const cell = row.cells[columnIndex];
+                    if (cell) {
+                        const cellText = cell.textContent.toLowerCase();
+                        if (!searchTerm || cellText.includes(searchTerm)) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
+                
+                console.log(`Поиск по столбцу ${columnIndex}: "${searchTerm}", найдено: ${visibleCount} из ${rows.length}`);
+            }
+            
+            // Добавляем обработчик на document для динамически созданных элементов
+            document.addEventListener('input', handleSearch);
+            
+            // Также добавляем обработчики для существующих полей
+            document.querySelectorAll('.column-search').forEach(input => {
+                input.addEventListener('input', handleSearch);
+            });
+        }
+
+        function renderTargetsChart(targets) {
+            const ctx = document.getElementById('targetsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: targets.map(t => t.target),
+                    datasets: [{
+                        data: targets.map(t => t.total_flights),
+                        backgroundColor: [
+                            '#366092', '#03dac6', '#bb86fc', '#cf6679', '#6200ee',
+                            '#7c3aed', '#18ffff', '#b00020', '#ff6f00', '#ffc107'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0' }, position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function renderDailyChart(dailyTrend) {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dailyTrend.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Уничтожено',
+                            data: dailyTrend.map(d => d.destroyed_flights),
+                            borderColor: '#b00020',
+                            backgroundColor: 'rgba(176, 0, 32, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'Поражено',
+                            data: dailyTrend.map(d => d.defeated_flights),
+                            borderColor: '#ff6f00',
+                            backgroundColor: 'rgba(255, 111, 0, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'Не поражено',
+                            data: dailyTrend.map(d => d.not_defeated_flights),
+                            borderColor: '#666',
+                            backgroundColor: 'rgba(102, 102, 102, 0.1)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('pilotsSearch').value = '';
+            document.getElementById('targetsSearch').value = '';
+            document.getElementById('dronesSearch').value = '';
+            document.getElementById('resultsSearch').value = '';
+            document.getElementById('pilotsFilter').selectedIndex = -1;
+            document.getElementById('targetsFilter').selectedIndex = -1;
+            document.getElementById('dronesFilter').selectedIndex = -1;
+            document.getElementById('resultsFilter').selectedIndex = -1;
+            
+            // Скрываем все зависимые фильтры
+            document.getElementById('targetsFilterGroup').style.display = 'none';
+            document.getElementById('dronesFilterGroup').style.display = 'none';
+            document.getElementById('resultsFilterGroup').style.display = 'none';
+            
+            // Показываем все опции после сброса
+            ['pilotsFilter', 'targetsFilter', 'dronesFilter', 'resultsFilter'].forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.querySelectorAll('option').forEach(option => {
+                        option.style.display = '';
+                    });
+                }
+            });
+            
+            document.getElementById('reportContent').innerHTML = '<div class="loading" style="padding: 20px; text-align: center;"><h3 style="color: #03dac6;">📊 Отчеты</h3><p>Выберите фильтры и нажмите "Применить фильтры" для генерации отчета</p></div>';
+            document.getElementById('exportExcelBtn').disabled = true;
+            currentReportData = null;
+        }
+
+        function exportToExcel() {
+            if (!currentFilters) {
+                alert('Сначала сформируйте отчет');
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            Object.keys(currentFilters).forEach(key => {
+                if (Array.isArray(currentFilters[key])) {
+                    currentFilters[key].forEach(val => params.append(key, val));
+                } else if (currentFilters[key]) {
+                    params.append(key, currentFilters[key]);
+                }
+            });
+            
+            window.location.href = `/api/reports/export/excel/?${params.toString()}`;
+        }
+
+
+        // Загружаем фильтры при загрузке страницы
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Страница загружена, версия: 2.0');
+            loadFilters();
+            // setupTableSearch будет вызван после рендеринга отчета
+        });
+        
+        // Принудительная очистка кэша при загрузке
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

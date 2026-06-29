@@ -1,0 +1,17 @@
+aeroflot-pvz.ru {
+	reverse_proxy webserver:80 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		transport http {
+			read_timeout 1h
+			write_timeout 1h
+		}
+	}
+	encode gzip zstd
+}
+
+# www: включите A-запись www -> 45.155.52.249 у регистратора, затем раскомментируйте блок ниже
+# www.aeroflot-pvz.ru {
+# 	redir https://aeroflot-pvz.ru{uri} permanent
+# }

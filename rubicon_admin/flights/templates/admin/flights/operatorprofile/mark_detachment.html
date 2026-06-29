@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Перевод на отрыв{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:flights_operatorprofile_changelist' %}">Пилоты на дежурстве</a>
+    &rsaquo; Перевод на отрыв
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h1>Перевод на отрыв</h1>
+    <p>Выбрано операторов: <strong>{{ operators|length }}</strong></p>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for operator in operators %}
+            <input type="hidden" name="_selected_action" value="{{ operator.pk }}">
+        {% endfor %}
+        <input type="hidden" name="action" value="mark_detachment">
+        <input type="hidden" name="apply" value="1">
+
+        <div class="module">
+            {% if operators|length == 1 %}
+                {% with operator=operators.0 %}
+                <div class="form-row">
+                    <label for="destination"><strong>{{ operator.pilot.callname }} — куда перемещаем?</strong></label>
+                    <input type="text" id="destination" name="destination" maxlength="500" required
+                           style="width: 100%; max-width: 480px; padding: 8px;"
+                           placeholder="Например: Зоха, выезд на точку…">
+                </div>
+                {% endwith %}
+            {% else %}
+                <p>Для каждого оператора укажите, куда перемещаем:</p>
+                {% for operator in operators %}
+                    <div class="form-row" style="margin-bottom: 12px;">
+                        <label for="destination_{{ operator.pk }}"><strong>{{ operator.pilot.callname }}</strong></label>
+                        <input type="text" id="destination_{{ operator.pk }}"
+                               name="destination_{{ operator.pk }}" maxlength="500" required
+                               style="width: 100%; max-width: 480px; padding: 8px;"
+                               placeholder="Куда перемещаем?">
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="submit-row">
+            <input type="submit" value="Перевести на отрыв" class="default">
+            <a href="{% url 'admin:flights_operatorprofile_changelist' %}" class="button cancel-link">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

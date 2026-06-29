@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <title>Отчёты</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    {% include 'includes/navigation_head.html' %}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+        .main-content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+        }
+        .page-header {
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #333;
+        }
+        .page-header h1 {
+            font-size: 28px;
+            color: #ff6666;
+            margin-bottom: 8px;
+        }
+        .page-header p {
+            color: #aaa;
+            font-size: 15px;
+        }
+        .reports-grid {
+            display: grid;
+            gap: 20px;
+        }
+        .report-card {
+            display: block;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px 26px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .report-card:hover {
+            border-color: #8B0000;
+            transform: translateY(-2px);
+        }
+        .report-card__title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ff9999;
+            margin-bottom: 10px;
+        }
+        .report-card__desc {
+            color: #bbb;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+        .report-card__meta {
+            margin-top: 14px;
+            font-size: 12px;
+            color: #777;
+        }
+        .report-card__arrow {
+            float: right;
+            color: #666;
+            font-size: 22px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+{% include 'includes/navigation.html' %}
+<main class="main-content">
+    <header class="page-header">
+        <h1>Отчёты</h1>
+        <p>Выберите нужный отчёт из списка ниже.</p>
+    </header>
+
+    <div class="reports-grid">
+        <a class="report-card" href="/tools/report/">
+            <span class="report-card__arrow">→</span>
+            <div class="report-card__title">Преобразование координат в НП</div>
+            <p class="report-card__desc">
+                Загрузите Excel-файл с координатами СК-42 — сервис заполнит столбец с ближайшим
+                населённым пунктом и подготовит KML для карты.
+            </p>
+            <p class="report-card__meta">Доступ без входа · результат хранится 1 час</p>
+        </a>
+
+        <a class="report-card" href="{% url 'friday-report-page' %}">
+            <span class="report-card__arrow">→</span>
+            <div class="report-card__title">Пятничный отчёт</div>
+            <p class="report-card__desc">
+                Укажите период — портал сформирует Excel и Word: лист «Цели» и текстовую сводку «Итог» по ТН.
+            </p>
+            <p class="report-card__meta">Требуется вход в портал</p>
+        </a>
+    </div>
+</main>
+</body>
+</html>

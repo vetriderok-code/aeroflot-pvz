@@ -1,0 +1,25 @@
+# Синхронизация TG ↔ MAX (двусторонняя).
+# max_chat_id: заполните после добавления MAX-бота в группу (событие bot_added)
+# или через MAX_BRIDGE_CHAT_* в .env
+
+channels:
+  - id: dirty
+    label: "Грязная группа"
+    tg_chat_id: -1003960872491
+    tg_topic_id: null
+    max_chat_id: null
+
+  - id: td_quarter
+    label: "Отчётный квартал ТД"
+    tg_chat_id: -1003775039433
+    tg_topic_id: null
+    max_chat_id: null
+
+topic_labels:
+  "-1003960872491":
+    "2406": "Отчёты"
+    "2408": "Оповещения"
+  "-1003775039433":
+    "1036": "1 ИГ"
+    "1038": "2 ИГ"
+    "1040": "3 ИГ"

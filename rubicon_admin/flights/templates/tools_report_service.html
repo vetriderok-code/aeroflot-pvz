@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обработка Excel-отчёта</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f0f0f;
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+        .wrap { max-width: 720px; margin: 0 auto; }
+        h1 { color: #ff6666; font-size: 28px; margin-bottom: 8px; }
+        .subtitle { color: #aaa; line-height: 1.6; margin-bottom: 24px; }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card h2 { color: #ff9999; font-size: 16px; margin-bottom: 12px; }
+        .card ul { margin-left: 18px; color: #ccc; line-height: 1.7; }
+        .upload-form { display: flex; flex-direction: column; gap: 16px; }
+        .columns-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .field label {
+            display: block;
+            color: #ff9999;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .field input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #111;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #eee;
+            text-transform: uppercase;
+        }
+        .field small {
+            display: block;
+            margin-top: 4px;
+            color: #777;
+            font-size: 11px;
+            text-transform: none;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            border: 1px dashed #555;
+            border-radius: 6px;
+            color: #eee;
+        }
+        .btn {
+            align-self: flex-start;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #8B0000;
+            color: #fff;
+        }
+        .btn:hover:not(:disabled) { background: #a50000; }
+        .btn:disabled { opacity: 0.55; cursor: wait; }
+        .messages { list-style: none; margin-bottom: 16px; }
+        .messages li {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .messages .error { background: #3a1515; border: 1px solid #aa3333; color: #ffb3b3; }
+        .progress { display: none; color: #aaa; font-size: 14px; }
+        .progress.visible { display: block; }
+        .footer { margin-top: 24px; color: #666; font-size: 13px; }
+        @media (max-width: 640px) {
+            .columns-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Обработка Excel-отчёта</h1>
+    <p class="subtitle">
+        Загрузите файл — сервис заполнит столбец с ближайшим НП и подготовит KML.
+        После обработки можно скачать оба файла без повторной загрузки.
+    </p>
+
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="card">
+        <h2>Формат координат</h2>
+        <ul>
+            <li>Укажите столбцы <strong>G</strong> и <strong>H</strong> из вашего файла (как подписано в шапке)</li>
+            <li>Сервис сам определит, где север (52–59xxxxx), а где восток (60–79xxxxx) — даже если подписи X/Y перепутаны</li>
+            <li>По умолчанию НП пишется в столбец <strong>I</strong></li>
+            <li>Если в вашем файле столбцы другие — укажите их буквами ниже</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <form class="upload-form" method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            <div class="columns-grid">
+                <div class="field">
+                    <label for="east_col">Столбец X (восток)</label>
+                    <input type="text" id="east_col" name="east_col" maxlength="3"
+                           value="{{ east_col|default:'G' }}" pattern="[A-Za-z]{1,3}" required>
+                    <small>Обычно G, например 5359504</small>
+                </div>
+                <div class="field">
+                    <label for="north_col">Столбец Y (север)</label>
+                    <input type="text" id="north_col" name="north_col" maxlength="3"
+                           value="{{ north_col|default:'H' }}" pattern="[A-Za-z]{1,3}" required>
+                    <small>Обычно H, например 7360000</small>
+                </div>
+                <div class="field">
+                    <label for="settlement_col">Столбец НП</label>
+                    <input type="text" id="settlement_col" name="settlement_col" maxlength="3"
+                           value="{{ settlement_col|default:'I' }}" pattern="[A-Za-z]{1,3}" required>
+                    <small>Куда записать ближайший населённый пункт</small>
+                </div>
+            </div>
+            <input type="file" name="excel_file" accept=".xlsx,.xlsm" required>
+            <p class="progress" id="progressMsg">Обработка… определение НП может занять несколько минут.</p>
+            <button type="submit" class="btn" id="submitBtn">Обработать файл</button>
+        </form>
+    </div>
+
+    <p class="footer">Без входа. Геокодирование — как на карте портала. Результат хранится 1 час.</p>
+</div>
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', function () {
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('progressMsg').classList.add('visible');
+    });
+</script>
+</body>
+</html>

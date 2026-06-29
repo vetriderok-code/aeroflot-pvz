@@ -1,0 +1,374 @@
+/* operator-dashboard ui 20260611 */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    line-height: 1.45;
+}
+
+.main-content {
+    padding: 16px 20px 28px;
+    max-width: 1520px;
+    margin: 0 auto;
+}
+
+.dashboard-shell {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+html.tv-mode body.page-operators .dashboard-shell {
+    overflow: hidden !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100% !important;
+}
+
+.dash-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px 24px;
+    padding: 22px 24px;
+    background: linear-gradient(120deg, #1e1a2e 0%, #16202a 45%, #141414 100%);
+    border-bottom: 1px solid #333;
+}
+
+.dash-toolbar--centered .dash-toolbar__title {
+    grid-column: 2;
+    justify-self: center;
+    text-align: center;
+    font-size: 40px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.dash-toolbar--centered .dash-status__clock {
+    grid-column: 3;
+    justify-self: end;
+    font-size: 20px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+
+.dashboard-body { padding: 20px 24px 28px; }
+
+.board-panel {
+    background: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.board-wrap { overflow-x: auto; }
+
+.operators-board {
+    background: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+html.tv-mode body.page-operators .operators-board {
+    overflow: visible !important;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    max-height: none !important;
+}
+
+html.tv-mode body.page-operators .board-wrap {
+    overflow: visible !important;
+}
+
+html.tv-mode body.page-operators .board-panel {
+    overflow: visible !important;
+}
+
+.board {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: 14px;
+}
+
+.board th, .board td {
+    border: 1px solid #525252;
+    vertical-align: middle;
+}
+.board tbody td {
+    border-color: #5a5a5a;
+}
+
+.board__top th {
+    background: linear-gradient(120deg, #1e1a2e 0%, #16202a 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 17px;
+    padding: 14px 8px;
+    text-align: center;
+}
+.board__top .col-icon {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 1.15em;
+    line-height: 1;
+    vertical-align: -0.05em;
+}
+.board__top .col-day { border-bottom: 3px solid #43a047; }
+.board__top .col-night { border-bottom: 3px solid #7c4dff; }
+.board__top .col-otr {
+    width: 11%;
+    border-bottom: 3px solid #ff9800;
+    color: #ffcc80;
+}
+.board__top .col-title { width: 32%; }
+
+.board__sub th {
+    background: #2a2a2a;
+    color: #cfd8dc;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 9px 4px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.board__sub .col-otr-sub {
+    color: #ffb74d;
+    border-left: 2px solid #ff9800;
+    border-right: 2px solid #ff9800;
+}
+
+tbody.crew-block + tbody.crew-block tr:first-child td {
+    border-top: 3px solid #444;
+}
+
+.row-senior td {
+    background: #1e1a2e;
+    color: #bb86fc;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 12px;
+    text-align: center;
+    text-transform: uppercase;
+}
+.row-senior--det td {
+    background: #1a1a1a;
+    color: #ffb74d;
+    border-top: 2px solid #ff9800;
+}
+
+.cell-otr-col {
+    text-align: center;
+    font-weight: 600;
+    color: #e0e0e0;
+    border-left: 2px solid #ff9800;
+    border-right: 2px solid #ff9800;
+}
+.row-senior .cell-otr-col { background: #1e1a2e; }
+.row-senior--det .cell-otr-col { background: #1a1a1a; color: #ffb74d; }
+.row-location .cell-otr-col { background: #252525; }
+.row-pilot .cell-otr-col { background: #383838; }
+.row-pilot--alt .cell-otr-col { background: #222222; }
+
+.row-location td {
+    background: #252525;
+    padding: 12px 14px;
+    text-align: center;
+}
+
+/* н.п. ПОЛОГИ (позиция БЕРКУТ) · связь СКС */
+.loc-cell {
+    display: block;
+    line-height: 1.5;
+    text-align: center;
+}
+.loc-label {
+    display: inline;
+}
+.loc-label__prefix {
+    font-size: 14px;
+    font-weight: 500;
+    color: #78909c;
+    text-transform: lowercase;
+}
+.loc-label__value,
+.loc-label__value--pos {
+    font-size: 14px;
+    font-weight: 600;
+    color: #b0bec5;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.loc-label__pos-wrap {
+    font-size: 14px;
+    color: #78909c;
+    margin-left: 2px;
+}
+
+.loc-cell {
+    display: block;
+    line-height: 1.5;
+    text-align: center;
+}
+.loc-label {
+    display: inline;
+}
+.loc-comm {
+    font-size: 14px;
+    color: #78909c;
+    margin-left: 6px;
+}
+.loc-comm__value {
+    margin-left: 4px;
+    color: #9fa8da;
+    font-weight: 600;
+}
+
+.row-pilot td {
+    padding: 11px 10px;
+    text-align: center;
+    background: #383838;
+    color: #f5f5f5;
+}
+.row-pilot--alt td { background: #222222; }
+
+.row-pilot .cell-name {
+    font-weight: 700;
+    font-size: 17px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #81c784;
+}
+
+.cell-name--flying,
+.det-pilot--flying {
+    color: #b8ffb8 !important;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.35);
+}
+
+.row-pilot .cell-name--flying {
+    background: linear-gradient(90deg, rgba(0, 200, 83, 0.22) 0%, rgba(0, 200, 83, 0.05) 100%);
+    box-shadow: inset 0 0 12px rgba(0, 220, 90, 0.18);
+}
+
+.pilot-flying-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00e676;
+    margin-right: 7px;
+    vertical-align: middle;
+    animation: flying-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes flying-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px #00e676; }
+    50% { opacity: 0.45; box-shadow: 0 0 2px #00e676; }
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating {
+    top: 16px;
+    right: 16px;
+    font-size: clamp(16px, 1.4vw, 24px);
+    padding: 14px 24px;
+    transition: opacity 0.25s ease;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"] {
+    opacity: 0;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"]:hover,
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"]:focus-visible {
+    opacity: 1;
+}
+
+.row-pilot .cell-equip {
+    font-size: 13px;
+    color: #b0bec5;
+}
+.row-pilot .cell-time {
+    font-size: 14px;
+    color: #cfd8dc;
+    font-variant-numeric: tabular-nums;
+}
+.row-pilot .cell-empty {
+    background: #1a1a1a;
+    color: #666;
+}
+
+.row-pilot--det .cell-otr-col {
+    background: rgba(255, 152, 0, 0.12);
+    border-left: 4px solid #ff9800;
+    color: #fff;
+    font-size: 16px;
+}
+
+.det-loc {
+    display: block;
+    font-size: 12px;
+    color: #ffb74d;
+    margin-top: 4px;
+    font-weight: 500;
+    text-transform: none;
+}
+
+.otr-group {
+    display: inline;
+    line-height: 1.45;
+    white-space: normal;
+}
+.det-pilot {
+    display: inline;
+    white-space: nowrap;
+}
+.det-sep {
+    color: #ff9800;
+    font-weight: 400;
+    padding: 0 2px;
+}
+.det-loc-inline {
+    font-size: 12px;
+    color: #ffb74d;
+    font-weight: 500;
+    text-transform: none;
+}
+
+.day-sep { border-right: 2px solid #43a047; }
+.night-sep { border-left: 2px solid #7c4dff; }
+
+tr.block-gap td {
+    height: 12px;
+    padding: 0;
+    background: #141414;
+    border: none !important;
+}
+
+.loading, .error-state {
+    text-align: center;
+    padding: 48px;
+    color: #888;
+    font-size: 16px;
+}
+.error-state { color: #f44336; }
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #78909c;
+    font-size: 16px;
+}

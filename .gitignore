@@ -1,0 +1,141 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static_root
+
+# Environment
+.env
+.env.local
+.env.prod
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db_export.json
+db_export_custom.sql
+
+# Node modules (если есть)
+node_modules/
+
+# AppData и другие системные директории
+AppData/
+Local/
+Temp/
+
+# CapCut файлы
+*.log
+
+# Промежуточные файлы
+*.tmp
+*.bak
+*.cache
+
+# SSL сертификаты
+certbot/conf/
+*.pem
+*.key
+
+# Видео файлы
+video_files/
+*.mp4
+*.avi
+*.mov
+
+# Дубликаты и временные файлы
+rubicon_bot_docker — export/
+
+# Временные скрипты
+*.sh
+*.bat
+*.ps1
+
+# Личные файлы пользователя (если git инициализирован в домашней директории)
+.Icecream Photo Editor/
+.android/
+.asc
+.cursor-sandbox/
+.cursor/
+.docker/
+.emulator_console_auth_token
+.gitconfig
+.gnupg/
+.gradle/
+.lesshst
+.matplotlib/
+.sbx-denybin/
+.skiko/
+.ssh/
+Contacts/
+Downloads/
+Favorites/
+Links/
+Music/
+NTUSER.DAT*
+ntuser.dat*
+ntuser.ini
+OneDrive/
+OpenVPN/
+Saved Games/
+Searches/
+Videos/
+cert-check-config/
+certbot/
+excelAPI/
+hdc-1-firewall/
+AppData/
+Application Data/
+Cookies/
+Documents/
+Local Settings/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+главное меню/
+Мои документы/
+Шаблоны/

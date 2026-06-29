@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <title>Оперативный дашборд</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <!-- dashboard-ui: 20260611-smart-refresh -->
+    {% include 'includes/navigation_head.html' %}
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.45;
+        }
+
+        .main-content {
+            padding: 16px 20px 28px;
+            max-width: 1520px;
+            margin: 0 auto;
+        }
+
+        .dashboard-shell {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+
+        .dashboard-shell:fullscreen,
+        .dashboard-shell:-webkit-full-screen {
+            border-radius: 0;
+            border: none;
+            max-height: 100vh;
+            overflow-y: auto;
+            background: #0f0f0f;
+        }
+
+        .dashboard-shell:fullscreen .dash-toolbar,
+        .dashboard-shell:-webkit-full-screen .dash-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .dashboard-shell:fullscreen .dashboard-body {
+            max-width: none;
+            padding: 20px 28px 32px;
+        }
+
+        /* ——— Шапка дашборда ——— */
+        .dash-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 16px 24px;
+            padding: 18px 24px;
+            background: linear-gradient(120deg, #1e1a2e 0%, #16202a 45%, #141414 100%);
+            border-bottom: 1px solid #333;
+        }
+
+        .dash-toolbar__brand {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 16px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        /* Заголовки блоков дашборда — по центру */
+        .dashboard-body h1,
+        .dashboard-body h2,
+        .kpi-card__label,
+        .weather-hero__region,
+        .weather-hero__rotate,
+        .map-panel h2 {
+            text-align: center;
+        }
+
+        .panel h2 {
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .weather-hero__top {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .weather-region-pills {
+            justify-content: center;
+        }
+
+        .weather-hero__body {
+            justify-content: center;
+        }
+
+        .dash-toolbar__icon {
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #7c4dff 0%, #448aff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 4px 16px rgba(124, 77, 255, 0.35);
+        }
+
+        .dash-toolbar__text {
+            min-width: 0;
+            text-align: center;
+        }
+
+        .dash-toolbar__text h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .dash-toolbar__subtitle {
+            margin-top: 6px;
+            font-size: 15px;
+            text-align: center;
+            color: #9aa8b8;
+            line-height: 1.4;
+        }
+
+        .dash-toolbar__tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .dash-tag {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #b0bec5;
+        }
+
+        .dash-tag--live { border-color: #43a047; color: #a5d6a7; }
+        .dash-tag--alert { border-color: #ff9800; color: #ffcc80; }
+        .dash-tag--report { border-color: #5c6bc0; color: #9fa8da; }
+
+        .dash-toolbar__actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .dash-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            padding-right: 12px;
+            border-right: 1px solid #3a3a3a;
+            margin-right: 4px;
+        }
+
+        .dash-status__clock {
+            font-size: 20px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+            letter-spacing: 0.02em;
+        }
+
+        .dash-status__updated {
+            font-size: 11px;
+            color: #78909c;
+            max-width: 200px;
+            text-align: right;
+        }
+
+        .dash-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            white-space: nowrap;
+        }
+
+        .dash-btn:active { transform: scale(0.98); }
+
+        .dash-btn--ghost {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        .dash-btn--ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #666;
+        }
+
+        .dash-btn--primary {
+            background: linear-gradient(145deg, #5e35b1, #3949ab);
+            border-color: #7e57c2;
+            color: #fff;
+        }
+
+        .dash-btn--primary:hover {
+            background: linear-gradient(145deg, #6a40c4, #4558c4);
+        }
+
+        .dash-btn__icon {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .dashboard-body {
+            padding: 20px 24px 28px;
+        }
+
+        @media (max-width: 900px) {
+            .dash-toolbar {
+                grid-template-columns: 1fr;
+            }
+            .dash-toolbar__actions {
+                justify-content: flex-start;
+                border-top: 1px solid #333;
+                padding-top: 14px;
+                width: 100%;
+            }
+            .dash-status {
+                align-items: flex-start;
+                border-right: none;
+                padding-right: 0;
+                margin-right: 0;
+            }
+            .dash-status__updated { text-align: left; }
+        }
+
+        /* ——— Погода ——— */
+        .weather-hero {
+            background: linear-gradient(145deg, #1a2332 0%, #151515 55%, #1a1a1a 100%);
+            border: 1px solid #2d3a4f;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .weather-hero__top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .weather-hero__region {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .weather-hero__rotate {
+            font-size: 13px;
+            color: #6a7a8f;
+        }
+
+        .weather-region-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .weather-pill {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #252525;
+            color: #666;
+            border: 1px solid #333;
+            transition: all 0.25s ease;
+        }
+
+        .weather-pill.active {
+            background: #2a3548;
+            color: #90caf9;
+            border-color: #4a6fa5;
+        }
+
+        .weather-hero__body {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px 32px;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 200px;
+        }
+
+        .weather-icon {
+            font-size: 56px;
+            line-height: 1;
+        }
+
+        .weather-temp {
+            font-size: 50px;
+            font-weight: 300;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.03em;
+        }
+
+        .weather-desc {
+            font-size: 18px;
+            color: #b0bec5;
+            margin-top: 2px;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px 20px;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .weather-metric {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .weather-metric__label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #78909c;
+            margin-bottom: 4px;
+        }
+
+        .weather-metric__value {
+            font-size: 19px;
+            font-weight: 600;
+            color: #e3f2fd;
+        }
+
+        .weather-error {
+            color: #ef5350;
+            font-size: 14px;
+        }
+
+        /* ——— KPI ——— */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            max-width: 920px;
+            margin: 0 auto 20px;
+        }
+
+        .kpi-card {
+            background: #1a1a1a;
+            border: 1px solid #2e2e2e;
+            border-radius: 12px;
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .kpi-card__label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card__value {
+            font-size: 44px;
+            font-weight: 700;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ——— Основная сетка ——— */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 960px) {
+            .dashboard-main { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: #1a1a1a;
+            border: 1px solid #2e2e2e;
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #bb86fc;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel h2 .count {
+            font-weight: 400;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .panel.alerts-panel {
+            border-color: #4a3c20;
+            min-height: 320px;
+        }
+
+        .panel.alerts-panel h2 {
+            color: #ffb74d;
+            font-size: 22px;
+        }
+
+        .alerts-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: min(520px, 55vh);
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            padding: 16px 18px;
+            border-radius: 10px;
+            background: #221c14;
+            border-left: 4px solid #ff9800;
+        }
+
+        .alert-item .alert-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ff9800;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 8px;
+        }
+
+        .alert-item .alert-text {
+            font-size: 20px;
+            line-height: 1.45;
+            color: #f5f5f5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .alert-item .alert-keyword {
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #ffeb3b;
+            color: #1a1a1a;
+            padding: 0.1em 0.4em;
+            border-radius: 4px;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+
+        .panel.alerts-panel .empty-state {
+            font-size: 18px;
+        }
+
+        .flights-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .flight-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .flight-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 14px;
+            border-radius: 8px;
+            background: #252525;
+            border: 1px solid #333;
+        }
+
+        .flight-item.active {
+            background: rgba(76, 175, 80, 0.12);
+            border-color: #43a047;
+        }
+
+        .flight-item .callname { font-weight: 600; font-size: 17px; }
+        .flight-item.active .callname { color: #81c784; }
+
+        .flight-item .time {
+            font-size: 16px;
+            color: #bbb;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .badge-auto {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #444;
+            color: #bbb;
+            margin-left: 6px;
+        }
+
+        .empty-state {
+            color: #666;
+            text-align: center;
+            padding: 28px 12px;
+            font-size: 15px;
+        }
+
+        .loading, .error-state {
+            text-align: center;
+            padding: 48px;
+        }
+
+        .error-state { color: #f44336; }
+
+        /* Карта отключена (код сохранён) */
+        .map-panel.map-panel--hidden {
+            display: none !important;
+        }
+
+        .map-panel {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 480px;
+        }
+
+        #dashboardMap { width: 100%; height: 440px; }
+
+        .dash-btn--tv {
+            border-color: #ffb74d;
+            color: #ffcc80;
+            background: rgba(255, 152, 0, 0.1);
+        }
+        .dash-btn--tv:hover {
+            background: rgba(255, 152, 0, 0.2);
+        }
+        .dash-btn--tv[aria-pressed="true"] {
+            background: linear-gradient(145deg, #ff9800, #f57c00);
+            color: #1a1000;
+            border-color: #ffb74d;
+        }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/tv-mode.css' %}?v=20260529b">
+</head>
+<body class="page-dashboard" data-page="dashboard">
+    {% include 'includes/navigation.html' %}
+
+    <div class="main-content">
+        <div id="dashboardShell" class="dashboard-shell">
+            <header class="dash-toolbar">
+                <div class="dash-toolbar__brand">
+                    <div class="dash-toolbar__icon" aria-hidden="true">📡</div>
+                    <div class="dash-toolbar__text">
+                        <h1>Оперативный дашборд</h1>
+                        <p class="dash-toolbar__subtitle">Мониторинг смены в реальном времени</p>
+                        <div class="dash-toolbar__tags">
+                            <span class="dash-tag dash-tag--live">Старт / Стоп</span>
+                            <span class="dash-tag dash-tag--alert">Оповещения</span>
+                            <span class="dash-tag dash-tag--report">Отчёты · топик 2406</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dash-toolbar__actions">
+                    <div class="dash-status">
+                        <span class="dash-status__clock" id="mskClock">—</span>
+                        <span class="dash-status__updated" id="updatedAt">Загрузка…</span>
+                    </div>
+                    <button type="button" class="dash-btn dash-btn--ghost tv-mode-btn dash-btn--tv" id="btnTvMode" title="Крупный интерфейс для телевизора" aria-pressed="false">
+                        <span class="dash-btn__icon">📺</span>
+                        <span class="tv-mode-btn__label">Режим ТВ</span>
+                    </button>
+                    <button type="button" class="dash-btn dash-btn--ghost" id="btnRefresh" title="Обновить сейчас">
+                        <span class="dash-btn__icon">↻</span>
+                        <span>Обновить</span>
+                    </button>
+                    <button type="button" class="dash-btn dash-btn--primary" id="btnFullscreen" title="Полноэкранный режим" aria-pressed="false">
+                        <span class="dash-btn__icon" id="fullscreenIcon">⛶</span>
+                        <span id="fullscreenLabel">На весь экран</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-body">
+                <div id="loading" class="loading">Загрузка…</div>
+        <div id="error" class="error-state" style="display: none;"></div>
+
+        <div id="dashboardContent" style="display: none;">
+            <section class="weather-hero" aria-label="Погода">
+                <div class="weather-hero__top">
+                    <div>
+                        <div class="weather-hero__region" id="weatherRegionName">—</div>
+                        <div class="weather-hero__rotate">Регион меняется автоматически каждые 15 секунд</div>
+                    </div>
+                    <div class="weather-region-pills" id="weatherPills"></div>
+                </div>
+                <div class="weather-hero__body" id="weatherBody">
+                    <div class="weather-main">
+                        <span class="weather-icon" id="weatherIcon">🌡️</span>
+                        <div>
+                            <div class="weather-temp" id="weatherTemp">—</div>
+                            <div class="weather-desc" id="weatherDesc">—</div>
+                        </div>
+                    </div>
+                    <div class="weather-grid">
+                        <div class="weather-metric">
+                            <div class="weather-metric__label">Ветер</div>
+                            <div class="weather-metric__value" id="weatherWind">—</div>
+                        </div>
+                        <div class="weather-metric">
+                            <div class="weather-metric__label">Влажность</div>
+                            <div class="weather-metric__value" id="weatherHumidity">—</div>
+                        </div>
+                        <div class="weather-metric">
+                            <div class="weather-metric__label">Наблюдение</div>
+                            <div class="weather-metric__value" id="weatherObserved">—</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="kpi-row" aria-label="Статистика вылетов">
+                <div class="kpi-card">
+                    <div class="kpi-card__label" id="statShiftLabel">Вылетов за смену</div>
+                    <div class="kpi-card__value" id="statShiftFlights">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-card__label" id="statDayLabel">Вылетов за сутки</div>
+                    <div class="kpi-card__value" id="stat24hFlights">—</div>
+                </div>
+            </section>
+
+            <div class="dashboard-main">
+                <div class="panel alerts-panel">
+                    <h2>Оповещения <span class="count" id="alertsCount"></span></h2>
+                    <ul class="alerts-list" id="alertsList"></ul>
+                </div>
+
+                <div class="flights-column">
+                    <div class="panel">
+                        <h2>В работе <span class="count" id="activeCount"></span></h2>
+                        <ul class="flight-list" id="activeList"></ul>
+                    </div>
+                    <div class="panel">
+                        <h2>За сутки <span class="count" id="completedCount"></span></h2>
+                        <ul class="flight-list" id="completedList"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карта временно отключена -->
+            <div class="map-panel map-panel--hidden" id="mapPanel">
+                <h2>Карта · координаты за 24 ч</h2>
+                <div class="map-points-count" id="mapPointsCount"></div>
+                <div id="dashboardMap"></div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.YANDEX_API_KEY = "{{ yandex_api_key }}";
+        const POLL_MS = 15000;
+        const WEATHER_ROTATE_MS = 15000;
+        const MAP_ENABLED = false;
+
+        let selectedRegionId = '';
+        let regionRotateIndex = 0;
+        let weatherRegions = [];
+        let dashboardMap = null;
+        let objectManager = null;
+        let mapInitialized = false;
+        let lastDashboardSignature = '';
+
+        const WMO_ICONS = {
+            0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+            45: '🌫️', 48: '🌫️',
+            51: '🌦️', 53: '🌦️', 55: '🌧️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
+            71: '🌨️', 73: '🌨️', 75: '❄️', 77: '🌨️',
+            80: '🌧️', 81: '🌧️', 82: '⛈️',
+            95: '⛈️', 96: '⛈️', 99: '⛈️',
+        };
+
+        function weatherEmoji(code) {
+            if (code == null || code === '') return '🌡️';
+            return WMO_ICONS[parseInt(code, 10)] || '🌡️';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /** Первое слово оповещения: жирный капс на жёлтом фоне. */
+        function formatAlertText(text) {
+            const raw = (text || '').trim();
+            if (!raw) return '';
+            const match = raw.match(/^(\S+)(\s*)([\s\S]*)$/);
+            if (!match) return escapeHtml(raw);
+            const first = `<span class="alert-keyword">${escapeHtml(match[1])}</span>`;
+            const rest = match[3] ? escapeHtml(match[3]) : '';
+            return first + (match[2] || (rest ? ' ' : '')) + rest;
+        }
+
+        function renderList(container, items, mode) {
+            container.innerHTML = '';
+            if (!items.length) {
+                container.innerHTML = '<li class="empty-state">Нет данных</li>';
+                return;
+            }
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'flight-item' + (mode === 'active' ? ' active' : '');
+                const timeLabel = mode === 'active' ? item.started_at : item.time_range;
+                const autoBadge = item.is_auto ? '<span class="badge-auto">авто</span>' : '';
+                li.innerHTML = `
+                    <span class="callname">${escapeHtml(item.callname)}</span>
+                    <span class="time">${escapeHtml(timeLabel)}${autoBadge}</span>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function renderAlerts(data) {
+            const alerts = data.alerts || [];
+            document.getElementById('alertsCount').textContent = '(' + alerts.length + ')';
+            const list = document.getElementById('alertsList');
+            list.innerHTML = '';
+            if (!alerts.length) {
+                list.innerHTML = '<li class="empty-state">Нет оповещений за 24 ч</li>';
+                return;
+            }
+            alerts.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'alert-item';
+                li.innerHTML = `
+                    <div class="alert-time">${escapeHtml(item.posted_at || '')}</div>
+                    <div class="alert-text">${formatAlertText(item.text || '')}</div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function renderFlightCounters(data) {
+            const shiftStats = data.shift_stats || data.daily_stats || {};
+            const stats24h = data.rolling_24h_stats || {};
+
+            const shiftValue = document.getElementById('statShiftFlights');
+            const shiftLabel = document.getElementById('statShiftLabel');
+            const value24h = document.getElementById('stat24hFlights');
+            const dayLabel = document.getElementById('statDayLabel');
+
+            if (shiftValue) {
+                const total = shiftStats.total_flights;
+                shiftValue.textContent = (total !== null && total !== undefined) ? String(total) : '—';
+            }
+            if (shiftLabel) {
+                const label = shiftStats.shift_label || 'Вылетов за смену';
+                shiftLabel.textContent = 'Вылетов за смену · ' + label;
+            }
+            if (dayLabel) {
+                const day = stats24h.day_label || stats24h.shift_label || '';
+                dayLabel.textContent = day
+                    ? ('Вылетов за сутки · ' + day)
+                    : 'Вылетов за сутки (06:00–06:00 МСК)';
+            }
+            if (value24h) {
+                const total24 = stats24h.total_flights;
+                value24h.textContent = (total24 !== null && total24 !== undefined) ? String(total24) : '—';
+            }
+        }
+
+        function renderWeatherPills(activeId) {
+            const container = document.getElementById('weatherPills');
+            container.innerHTML = '';
+            weatherRegions.forEach(region => {
+                const pill = document.createElement('span');
+                pill.className = 'weather-pill' + (region.id === activeId ? ' active' : '');
+                pill.textContent = region.name;
+                pill.addEventListener('click', () => {
+                    selectedRegionId = region.id;
+                    const idx = weatherRegions.findIndex(r => r.id === region.id);
+                    if (idx >= 0) {
+                        regionRotateIndex = (idx + 1) % weatherRegions.length;
+                    }
+                    loadWeather(region.id, { forceRefresh: true });
+                });
+                container.appendChild(pill);
+            });
+        }
+
+        function formatObservedTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString('ru-RU', {
+                    timeZone: 'Europe/Moscow',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                });
+            } catch (e) {
+                return '—';
+            }
+        }
+
+        function renderWeather(data) {
+            const weather = data.weather || {};
+            weatherRegions = data.weather_regions || [];
+
+            const regionId = weather.region_id || (weatherRegions[0] && weatherRegions[0].id);
+            if (regionId) {
+                selectedRegionId = regionId;
+                const idx = weatherRegions.findIndex(r => r.id === regionId);
+                if (idx >= 0) {
+                    regionRotateIndex = (idx + 1) % weatherRegions.length;
+                }
+            }
+
+            renderWeatherPills(regionId);
+
+            if (weather.error) {
+                document.getElementById('weatherRegionName').textContent =
+                    weather.region_name || 'Погода';
+                document.getElementById('weatherIcon').textContent = '⚠️';
+                document.getElementById('weatherTemp').textContent = '—';
+                document.getElementById('weatherDesc').innerHTML =
+                    '<span class="weather-error">Данные недоступны</span>';
+                document.getElementById('weatherWind').textContent = '—';
+                document.getElementById('weatherHumidity').textContent = '—';
+                document.getElementById('weatherObserved').textContent = '—';
+                return;
+            }
+
+            document.getElementById('weatherRegionName').textContent =
+                weather.region_name || '—';
+            document.getElementById('weatherIcon').textContent =
+                weatherEmoji(weather.weather_code);
+            const temp = weather.temperature;
+            document.getElementById('weatherTemp').textContent =
+                temp != null ? `${Math.round(temp)}°` : '—';
+            document.getElementById('weatherDesc').textContent =
+                weather.description || '—';
+
+            const wind = weather.wind_speed;
+            const windDir = weather.wind_direction_label || '';
+            document.getElementById('weatherWind').textContent =
+                wind != null ? `${wind.toFixed(1)} м/с · ${windDir}` : '—';
+
+            const hum = weather.humidity;
+            document.getElementById('weatherHumidity').textContent =
+                hum != null ? `${Math.round(hum)}%` : '—';
+
+            document.getElementById('weatherObserved').textContent =
+                formatObservedTime(weather.observed_at);
+        }
+
+        function loadYandexMap(callback) {
+            if (typeof ymaps !== 'undefined') {
+                ymaps.ready(callback);
+                return;
+            }
+            if (!window.YANDEX_API_KEY || window.YANDEX_API_KEY === 'None') return;
+            const script = document.createElement('script');
+            script.src = `https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=${window.YANDEX_API_KEY}`;
+            script.onload = () => ymaps.ready(callback);
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            if (mapInitialized) return;
+            mapInitialized = true;
+            dashboardMap = new ymaps.Map('dashboardMap', {
+                center: [48.4, 37.2],
+                zoom: 8,
+                controls: ['zoomControl'],
+                type: 'yandex#hybrid',
+            });
+            objectManager = new ymaps.ObjectManager({ clusterize: true, gridSize: 64 });
+            dashboardMap.geoObjects.add(objectManager);
+        }
+
+        function updateMap(points) {
+            if (!MAP_ENABLED || !objectManager) return;
+            objectManager.removeAll();
+            const features = (points || []).map(point => ({
+                type: 'Feature',
+                id: point.id,
+                geometry: { type: 'Point', coordinates: [point.lat, point.lng] },
+                properties: {
+                    hintContent: `${point.pilot_name || '—'} · №${point.number}`,
+                },
+                options: {
+                    preset: point.is_active_pilot
+                        ? 'islands#greenDotIcon'
+                        : 'islands#orangeDotIcon',
+                },
+            }));
+            if (features.length) {
+                objectManager.add({ type: 'FeatureCollection', features });
+                const bounds = objectManager.getBounds();
+                if (bounds) {
+                    dashboardMap.setBounds(bounds, { checkZoomRange: true, zoomMargin: 40 });
+                }
+            }
+        }
+
+        function showDashboardContent() {
+            const el = document.getElementById('dashboardContent');
+            if (!el) return;
+            const tvOn = window.RubiconTvMode && window.RubiconTvMode.isActive();
+            el.style.display = tvOn ? 'grid' : 'block';
+        }
+
+        async function loadWeather(regionId, { forceRefresh = false } = {}) {
+            try {
+                const url = new URL('/api/dashboard_weather/', window.location.origin);
+                if (regionId) {
+                    url.searchParams.set('region', regionId);
+                }
+                if (forceRefresh) {
+                    url.searchParams.set('refresh', '1');
+                }
+                const response = await fetch(url, { credentials: 'same-origin' });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                renderWeather(data);
+            } catch (err) {
+                console.error('Ошибка загрузки погоды:', err);
+            }
+        }
+
+        function rotateWeatherRegion() {
+            if (!weatherRegions.length) return;
+            const idx = regionRotateIndex % weatherRegions.length;
+            const region = weatherRegions[idx];
+            selectedRegionId = region.id;
+            regionRotateIndex = (idx + 1) % weatherRegions.length;
+            loadWeather(region.id, { forceRefresh: true });
+        }
+
+        function dashboardSignature(data) {
+            return JSON.stringify({
+                updated_at: data.updated_at || '',
+                active: data.active || [],
+                completed: (data.completed || []).slice(0, 30),
+                alerts: data.alerts || [],
+                shift: data.shift_stats || null,
+                rolling: data.rolling_24h_stats || null,
+                daily: data.daily_stats || null,
+            });
+        }
+
+        function renderDashboardData(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            showDashboardContent();
+
+            renderList(document.getElementById('activeList'), data.active || [], 'active');
+            renderList(document.getElementById('completedList'), data.completed || [], 'completed');
+            document.getElementById('activeCount').textContent =
+                '(' + (data.active || []).length + ')';
+            document.getElementById('completedCount').textContent =
+                '(' + (data.completed || []).length + ')';
+
+            renderFlightCounters(data);
+            try {
+                renderWeather(data);
+            } catch (weatherErr) {
+                console.error('Ошибка отрисовки погоды:', weatherErr);
+            }
+            renderAlerts(data);
+
+            if (MAP_ENABLED) {
+                const points = data.map_points || [];
+                document.getElementById('mapPointsCount').textContent =
+                    `Точек: ${points.length}`;
+                updateMap(points);
+            }
+        }
+
+        function updateDashboardStatus(data, changed) {
+            const el = document.getElementById('updatedAt');
+            if (!el) return;
+            const checkedAt = new Date().toLocaleTimeString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            });
+            if (changed && data.updated_at) {
+                const d = new Date(data.updated_at);
+                el.textContent =
+                    'Обновлено · ' + d.toLocaleString('ru-RU', {
+                        timeZone: 'Europe/Moscow',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                    }) + ' · проверка каждые 15 с';
+            } else {
+                el.textContent = 'Проверено ' + checkedAt + ' · без изменений · каждые 15 с';
+            }
+        }
+
+        async function loadDashboard({ force = false } = {}) {
+            try {
+                const url = new URL('/api/live_dashboard/', window.location.origin);
+                if (selectedRegionId) {
+                    url.searchParams.set('region', selectedRegionId);
+                }
+                url.searchParams.set('_', String(Date.now()));
+                const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+
+                const signature = dashboardSignature(data);
+                const changed = force || signature !== lastDashboardSignature;
+                if (changed) {
+                    lastDashboardSignature = signature;
+                    renderDashboardData(data);
+                }
+                updateDashboardStatus(data, changed);
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                const errEl = document.getElementById('error');
+                errEl.style.display = 'block';
+                errEl.textContent = 'Ошибка загрузки: ' + err.message;
+            }
+        }
+
+        function updateMskClock() {
+            const el = document.getElementById('mskClock');
+            if (!el) return;
+            el.textContent = new Date().toLocaleTimeString('ru-RU', {
+                timeZone: 'Europe/Moscow',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            });
+        }
+
+        function setFullscreenUi(isFs) {
+            const btn = document.getElementById('btnFullscreen');
+            const label = document.getElementById('fullscreenLabel');
+            const icon = document.getElementById('fullscreenIcon');
+            if (!btn || !label || !icon) return;
+            btn.setAttribute('aria-pressed', isFs ? 'true' : 'false');
+            label.textContent = isFs ? 'Выйти' : 'На весь экран';
+            icon.textContent = isFs ? '⤢' : '⛶';
+        }
+
+        function toggleFullscreen() {
+            const shell = document.getElementById('dashboardShell');
+            if (!shell) return;
+            if (!document.fullscreenElement) {
+                const req = shell.requestFullscreen || shell.webkitRequestFullscreen;
+                if (req) req.call(shell);
+            } else {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                if (exit) exit.call(document);
+            }
+        }
+
+        function bindToolbar() {
+            updateMskClock();
+            setInterval(updateMskClock, 1000);
+
+            window.addEventListener('rubicon-tv-mode', () => {
+                const el = document.getElementById('dashboardContent');
+                if (el && el.style.display !== 'none') showDashboardContent();
+            });
+
+            document.getElementById('btnRefresh')?.addEventListener('click', () => {
+                loadDashboard({ force: true });
+            });
+            document.getElementById('btnFullscreen')?.addEventListener('click', toggleFullscreen);
+            document.addEventListener('fullscreenchange', () => {
+                setFullscreenUi(!!document.fullscreenElement);
+            });
+            setFullscreenUi(!!document.fullscreenElement);
+        }
+
+        function startDashboard() {
+            bindToolbar();
+            loadDashboard({ force: true });
+            setInterval(() => loadDashboard(), POLL_MS);
+            setInterval(rotateWeatherRegion, WEATHER_ROTATE_MS);
+        }
+
+        if (MAP_ENABLED) {
+            loadYandexMap(() => {
+                initMap();
+                startDashboard();
+            });
+        } else {
+            startDashboard();
+        }
+    </script>
+    <script src="{% static 'js/tv-mode.js' %}?v=20260529b"></script>
+</body>
+</html>

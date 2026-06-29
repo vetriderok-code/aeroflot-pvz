@@ -1,0 +1,10 @@
+asyncpg~=0.30.0
+aiogram~=3.22.0
+APScheduler~=3.11.0
+python-decouple~=3.8
+psycopg2-binary~=2.9.10
+asyncpg_lite
+openpyxl~=3.1.5
+PyYAML~=6.0.2
+redis~=6.4.0
+httpx~=0.28.1

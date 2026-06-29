@@ -1,0 +1,63 @@
+<!-- templates/admin/clear_database.html -->
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:flights_flight_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>⚠️ {{ title }}</h1>
+    
+    <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <h2 style="color: #856404; margin-top: 0;">⚠️ ВНИМАНИЕ!</h2>
+        <p style="font-size: 16px; line-height: 1.6; color: #856404;">
+            Вы собираетесь <strong>полностью очистить базу данных</strong> от всех данных, загруженных из Excel файлов.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; color: #856404;">
+            Это действие <strong>необратимо</strong> и удалит:
+        </p>
+        <ul style="font-size: 16px; line-height: 1.8; color: #856404;">
+            <li><strong>Вылеты:</strong> {{ flights_count }} записей</li>
+            <li><strong>Пилоты:</strong> {{ pilots_count }} записей</li>
+            <li><strong>Дроны:</strong> {{ drones_count }} записей</li>
+            <li><strong>Виды БП:</strong> {{ explosive_types_count }} записей</li>
+            <li><strong>Виды взрывателя:</strong> {{ explosive_devices_count }} записей</li>
+            <li><strong>Типы целей:</strong> все записи</li>
+            <li><strong>Типы корректировок:</strong> все записи</li>
+            <li><strong>Типы направлений:</strong> все записи</li>
+            <li><strong>Прогресс импорта:</strong> все записи</li>
+        </ul>
+        <p style="font-size: 18px; font-weight: bold; color: #dc3545; margin-top: 20px;">
+            ⚠️ Это действие нельзя отменить!
+        </p>
+    </div>
+    
+    <form method="post" action="{% url 'admin:flights_flight_clear_database' %}">
+        {% csrf_token %}
+        <div style="margin-top: 30px;">
+            <button type="submit" 
+                    style="background: #dc3545; color: white; padding: 15px 30px; font-size: 18px; 
+                           border: none; border-radius: 5px; cursor: pointer; font-weight: bold;"
+                    onclick="return confirm('Вы уверены, что хотите удалить ВСЕ данные? Это действие необратимо!');">
+                🗑️ Да, очистить базу данных
+            </button>
+            <a href="{% url 'admin:flights_flight_changelist' %}" 
+               style="margin-left: 15px; padding: 15px 30px; font-size: 18px; 
+                      background: #6c757d; color: white; text-decoration: none; 
+                      border-radius: 5px; display: inline-block;">
+                ❌ Отмена
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

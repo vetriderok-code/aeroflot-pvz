@@ -1,0 +1,67 @@
+<!-- templates/includes/navigation.html -->
+<nav class="top-nav">
+    <div class="logo">{{ PORTAL_SITE_NAME }}</div>
+    <button type="button" class="nav-toggle" id="mobile-menu" aria-label="Меню" aria-expanded="false">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </button>
+    <div class="nav-links">
+        <a href="/" class="{% if request.resolver_match.url_name == 'map' %}active{% endif %}">Карта</a>
+        {% if DASHBOARD_ENABLED %}
+        <a href="/dashboard/" class="{% if request.resolver_match.url_name == 'dashboard-page' %}active{% endif %}">Дашборд</a>
+        {% endif %}
+        <a href="/statistics/" class="{% if request.resolver_match.url_name == 'statistics-page' %}active{% endif %}">Статистика</a>
+        <a href="/operators/" class="{% if request.resolver_match.url_name == 'operator-dashboard-page' %}active{% endif %}">Расписание</a>
+        <a href="/rating/" class="{% if request.resolver_match.url_name == 'rating' %}active{% endif %}">Рейтинг</a>
+        <a href="/reports/" class="{% if request.resolver_match.url_name == 'reports-page' %}active{% endif %}">Отчеты</a>
+        {% if user.is_authenticated %}
+            {% if user.is_staff or user.is_superuser %}
+            <a href="/admin/">Администрирование</a>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div class="user-info">
+        {% if user.is_authenticated %}
+            <span class="nav-user-name">Пользователь: {{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="nav-logout-btn">Выход</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="nav-login-btn">Войти</a>
+        {% endif %}
+    </div>
+</nav>
+<script>
+(function () {
+    function initSiteNav() {
+        var mobileMenu = document.getElementById('mobile-menu');
+        var navLinks = document.querySelector('.top-nav .nav-links');
+        if (!mobileMenu || !navLinks) {
+            return;
+        }
+        mobileMenu.addEventListener('click', function () {
+            var isOpen = navLinks.classList.toggle('active');
+            mobileMenu.classList.toggle('active', isOpen);
+            mobileMenu.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+        navLinks.querySelectorAll('a').forEach(function (item) {
+            item.addEventListener('click', function () {
+                navLinks.classList.remove('active');
+                mobileMenu.classList.remove('active');
+                mobileMenu.setAttribute('aria-expanded', 'false');
+            });
+        });
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) {
+                navLinks.classList.remove('active');
+                mobileMenu.classList.remove('active');
+                mobileMenu.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSiteNav);
+    } else {
+        initSiteNav();
+    }
+})();
+</script>

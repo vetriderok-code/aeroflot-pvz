@@ -1,0 +1,659 @@
+/* Режим отображения для большого ТВ (4K / 100") */
+
+.tv-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border: 1px solid #ffb74d;
+    background: rgba(255, 152, 0, 0.12);
+    color: #ffcc80;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.tv-mode-btn:hover {
+    background: rgba(255, 152, 0, 0.22);
+    border-color: #ffcc80;
+}
+
+.tv-mode-btn[aria-pressed="true"] {
+    background: linear-gradient(145deg, #ff9800 0%, #f57c00 100%);
+    color: #1a1000;
+    border-color: #ffb74d;
+    box-shadow: 0 4px 20px rgba(255, 152, 0, 0.35);
+}
+
+.tv-mode-btn--floating {
+    position: fixed;
+    top: 72px;
+    right: 20px;
+    z-index: 10050;
+    padding: 12px 20px;
+    font-size: 18px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+
+html.tv-mode .top-nav,
+html.tv-mode .user-info,
+html.tv-mode .nav-toggle {
+    display: none !important;
+}
+
+html.tv-mode .main-content {
+    max-width: none !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0.8vh 1.2vw 1vh !important;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ——— Дашборд: одна «стена» без вертикального скролла страницы ——— */
+html.tv-mode body.page-dashboard {
+    overflow: hidden;
+    background: #0a0a0a;
+    height: 100vh;
+}
+
+html.tv-mode body.page-dashboard .main-content {
+    height: 100vh;
+    padding: 0.5vh 0.8vw !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+html.tv-mode body.page-dashboard .dashboard-shell {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html.tv-mode body.page-dashboard .dashboard-shell:fullscreen,
+html.tv-mode body.page-dashboard .dashboard-shell:-webkit-full-screen {
+    overflow: hidden;
+}
+
+/* Шапка — одна строка, даже на узком viewport ТВ-браузера */
+html.tv-mode body.page-dashboard .dash-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    padding: 0.8vh 1.2vw;
+    flex-shrink: 0;
+}
+
+html.tv-mode body.page-dashboard .dash-toolbar__actions {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+    width: auto !important;
+}
+
+html.tv-mode body.page-dashboard .dash-status {
+    align-items: flex-end !important;
+    border-right: 1px solid #3a3a3a !important;
+}
+
+html.tv-mode body.page-dashboard .dash-toolbar__subtitle,
+html.tv-mode body.page-dashboard .dash-toolbar__tags,
+html.tv-mode body.page-dashboard .weather-hero__rotate,
+html.tv-mode body.page-dashboard .weather-region-pills {
+    display: none !important;
+}
+
+html.tv-mode body.page-dashboard .dash-toolbar__icon {
+    width: clamp(44px, 3.2vw, 64px);
+    height: clamp(44px, 3.2vw, 64px);
+    font-size: clamp(22px, 2vw, 34px);
+}
+
+html.tv-mode body.page-dashboard .dash-toolbar h1 {
+    font-size: clamp(22px, 2.2vw, 40px);
+}
+
+html.tv-mode body.page-dashboard .dash-status__clock {
+    font-size: clamp(18px, 1.8vw, 32px);
+}
+
+html.tv-mode body.page-dashboard .dash-status__updated {
+    font-size: clamp(10px, 0.9vw, 14px);
+}
+
+html.tv-mode body.page-dashboard .dash-btn {
+    padding: 0.6vh 1vw;
+    font-size: clamp(13px, 1.1vw, 20px);
+}
+
+html.tv-mode body.page-dashboard .dashboard-body {
+    flex: 1;
+    min-height: 0;
+    padding: 0.6vh 1vw 0.8vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Верх: погода слева | KPI справа; низ: оповещения | рейсы */
+html.tv-mode body.page-dashboard #dashboardContent {
+    flex: 1;
+    min-height: 0;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 24vw);
+    grid-template-rows: minmax(0, 26vh) minmax(0, 1fr);
+    grid-template-areas:
+        "weather kpi"
+        "main main";
+    gap: 0.8vh 1vw;
+    align-content: stretch;
+}
+
+html.tv-mode body.page-dashboard .weather-hero {
+    grid-area: weather;
+    margin: 0;
+    padding: 1vh 1.2vw;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+html.tv-mode body.page-dashboard .weather-hero__top {
+    margin-bottom: 0.6vh;
+}
+
+html.tv-mode body.page-dashboard .weather-hero__region {
+    font-size: clamp(18px, 1.6vw, 30px) !important;
+}
+
+html.tv-mode body.page-dashboard .weather-hero__body {
+    flex-wrap: nowrap !important;
+    gap: 1.5vw;
+    align-items: center;
+}
+
+html.tv-mode body.page-dashboard .weather-main {
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+html.tv-mode body.page-dashboard .weather-icon {
+    font-size: clamp(36px, 3.5vw, 56px);
+}
+
+html.tv-mode body.page-dashboard .weather-temp {
+    font-size: clamp(32px, 3.2vw, 56px) !important;
+}
+
+html.tv-mode body.page-dashboard .weather-desc {
+    font-size: clamp(14px, 1.2vw, 22px) !important;
+}
+
+html.tv-mode body.page-dashboard .weather-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    min-width: 0;
+    flex: 1;
+}
+
+html.tv-mode body.page-dashboard .weather-metric {
+    padding: 0.8vh 0.8vw;
+}
+
+html.tv-mode body.page-dashboard .weather-metric__label {
+    font-size: clamp(10px, 0.85vw, 14px);
+}
+
+html.tv-mode body.page-dashboard .weather-metric__value {
+    font-size: clamp(14px, 1.2vw, 22px) !important;
+}
+
+html.tv-mode body.page-dashboard .kpi-row {
+    grid-area: kpi;
+    max-width: none;
+    margin: 0;
+    height: 100%;
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: 1fr;
+    gap: 0.8vw;
+    align-self: stretch;
+}
+
+html.tv-mode body.page-dashboard .kpi-card {
+    padding: 1vh 1vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+}
+
+html.tv-mode body.page-dashboard .kpi-card__label {
+    font-size: clamp(11px, 1vw, 18px);
+    margin-bottom: 0.4vh;
+}
+
+html.tv-mode body.page-dashboard .kpi-card__value {
+    font-size: clamp(36px, 4.5vw, 72px);
+}
+
+html.tv-mode body.page-dashboard .dashboard-main {
+    grid-area: main;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, 32vw) !important;
+    gap: 1vw;
+    min-height: 0;
+    height: 100%;
+    align-items: stretch;
+}
+
+html.tv-mode body.page-dashboard .panel {
+    padding: 0.8vh 1vw;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+html.tv-mode body.page-dashboard .panel h2 {
+    font-size: clamp(16px, 1.5vw, 28px);
+    margin-bottom: 0.6vh;
+    flex-shrink: 0;
+}
+
+html.tv-mode body.page-dashboard .panel.alerts-panel {
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+}
+
+html.tv-mode body.page-dashboard .alerts-list {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    gap: 0.6vh;
+}
+
+html.tv-mode body.page-dashboard .alert-item {
+    padding: 0.8vh 1vw;
+}
+
+html.tv-mode body.page-dashboard .alert-item .alert-time {
+    font-size: clamp(14px, 1.2vw, 22px);
+}
+
+html.tv-mode body.page-dashboard .alert-item .alert-text {
+    font-size: clamp(16px, 1.4vw, 26px);
+    line-height: 1.3;
+}
+
+html.tv-mode body.page-dashboard .alert-item .alert-keyword {
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #ffeb3b;
+    color: #1a1a1a;
+    padding: 0.08em 0.35em;
+    border-radius: 4px;
+}
+
+html.tv-mode body.page-dashboard .flights-column {
+    min-height: 0;
+    height: 100%;
+    display: grid !important;
+    grid-template-rows: 1fr 1fr;
+    gap: 0.8vh;
+}
+
+html.tv-mode body.page-dashboard .flights-column .panel {
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.tv-mode body.page-dashboard .flight-list {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    gap: 0.4vh;
+}
+
+html.tv-mode body.page-dashboard .flight-item {
+    padding: 0.6vh 0.8vw;
+}
+
+html.tv-mode body.page-dashboard .flight-item .callname {
+    font-size: clamp(15px, 1.3vw, 24px);
+}
+
+html.tv-mode body.page-dashboard .flight-item .time {
+    font-size: clamp(13px, 1.1vw, 20px);
+}
+
+html.tv-mode body.page-dashboard .empty-state {
+    font-size: clamp(14px, 1.2vw, 20px);
+    padding: 2vh 0.5vw;
+}
+
+/* ——— Карта ——— */
+html.tv-mode body.page-map {
+    overflow: hidden;
+}
+
+html.tv-mode body.page-map .main-content {
+    height: 100vh !important;
+    padding: 0 !important;
+}
+
+html.tv-mode body.page-map .sidebar,
+html.tv-mode body.page-map .filter-toggle-mobile {
+    display: none !important;
+}
+
+html.tv-mode body.page-map .map-container {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+html.tv-mode body.page-map #map {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+html.tv-mode body.page-map .tv-mode-btn--floating {
+    top: 16px;
+    right: 16px;
+    font-size: clamp(16px, 1.4vw, 24px);
+    padding: 14px 24px;
+}
+
+/* ——— Расписание ——— */
+html.tv-mode body.page-schedule {
+    overflow: hidden;
+    background: #0a0a0a;
+    height: 100vh;
+}
+
+html.tv-mode body.page-schedule .main-content {
+    height: 100vh;
+    padding: 0.6vh 1vw !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+html.tv-mode body.page-schedule .schedule-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+html.tv-mode body.page-schedule .schedule-shell:fullscreen,
+html.tv-mode body.page-schedule .schedule-shell:-webkit-full-screen {
+    background: #121212;
+    overflow: hidden;
+}
+
+html.tv-mode body.page-schedule .filters-section {
+    display: none !important;
+}
+
+html.tv-mode body.page-schedule .page-header {
+    margin-bottom: 0.8vh;
+    padding-bottom: 0.6vh;
+    flex-shrink: 0;
+}
+
+html.tv-mode body.page-schedule .page-header__subtitle {
+    display: none !important;
+}
+
+html.tv-mode body.page-schedule .page-header h1 {
+    font-size: clamp(22px, 2.2vw, 40px);
+    margin-bottom: 0.3vh;
+}
+
+html.tv-mode body.page-schedule .schedule-live-hint {
+    font-size: clamp(12px, 1vw, 18px);
+    margin-top: 0;
+}
+
+html.tv-mode body.page-schedule .schedule-tv-btn {
+    font-size: clamp(13px, 1.1vw, 20px);
+    padding: 0.7vh 1.2vw;
+}
+
+html.tv-mode body.page-schedule .schedule-section {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.6vh;
+    padding: 0.8vh 0.8vw;
+    border-radius: 6px;
+}
+
+html.tv-mode body.page-schedule .schedule-header {
+    font-size: clamp(18px, 1.6vw, 30px);
+    margin-bottom: 0.6vh;
+    padding-bottom: 0.4vh;
+    flex-shrink: 0;
+}
+
+html.tv-mode body.page-schedule .schedule-header h2 {
+    font-size: inherit;
+}
+
+html.tv-mode body.page-schedule .schedule-table-container {
+    flex: 1;
+    min-height: 0;
+    max-height: none !important;
+    overflow: auto;
+}
+
+html.tv-mode body.page-schedule .schedule-table {
+    font-size: clamp(15px, 1.35vw, 28px);
+}
+
+html.tv-mode body.page-schedule .pilot-name {
+    min-width: clamp(130px, 11vw, 240px);
+    font-size: clamp(14px, 1.2vw, 24px);
+}
+
+html.tv-mode body.page-schedule .schedule-table td,
+html.tv-mode body.page-schedule .schedule-table th {
+    padding: clamp(7px, 0.9vh, 16px) clamp(5px, 0.6vw, 12px);
+}
+
+html.tv-mode body.page-schedule .schedule-table .date-header {
+    top: 0;
+    font-size: clamp(13px, 1.1vw, 22px);
+}
+
+html.tv-mode body.page-schedule .schedule-table .shift-header {
+    top: clamp(34px, 3.2vh, 52px);
+    font-size: clamp(12px, 1vw, 20px);
+}
+
+html.tv-mode body.page-schedule .pilot-flying-dot {
+    width: clamp(8px, 0.7vw, 14px);
+    height: clamp(8px, 0.7vw, 14px);
+}
+
+/* ——— Сводная по отряду (/operators/) ——— */
+html.tv-mode body.page-operators {
+    overflow: hidden !important;
+    height: 100vh !important;
+    background: #0a0a0a;
+}
+
+html.tv-mode body.page-operators .main-content {
+    height: 100vh !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+html.tv-mode body.page-operators #operatorsShell,
+html.tv-mode body.page-operators .dashboard-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+html.tv-mode body.page-operators #operatorsShell:fullscreen,
+html.tv-mode body.page-operators #operatorsShell:-webkit-full-screen {
+    background: #141414;
+    height: 100% !important;
+    width: 100%;
+}
+
+html.tv-mode body.page-operators .dash-toolbar {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 3 !important;
+    padding: 0.8vh 1.2vw;
+}
+
+html.tv-mode body.page-operators #operatorsTvScroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    position: relative !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+html.tv-mode body.page-operators #operatorsTvScroll.operators-tv-scroll--manual {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: #ff9800 #1a1a1a;
+}
+
+html.tv-mode body.page-operators #operatorsTvInner {
+    overflow: visible !important;
+    height: auto !important;
+    will-change: transform;
+}
+
+html.tv-mode body.page-operators #operatorsTvScroll .board thead {
+    position: static !important;
+}
+
+html.tv-mode body.page-operators .dashboard-body,
+html.tv-mode body.page-operators .operators-board {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+html.tv-mode body.page-operators .dashboard-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+html.tv-mode body.page-operators #operatorsTvInner .board {
+    margin: 0 !important;
+}
+
+html.tv-mode body.page-operators .dash-status__clock {
+    font-size: clamp(18px, 1.8vw, 32px) !important;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn {
+    font-size: clamp(13px, 1.1vw, 20px);
+    padding: 0.7vh 1.2vw;
+}
+
+html.tv-mode body.page-operators .dash-toolbar__title {
+    font-size: clamp(24px, 2.4vw, 44px) !important;
+}
+
+html.tv-mode body.page-operators .board {
+    font-size: clamp(15px, 1.35vw, 28px);
+    min-width: 0;
+}
+
+html.tv-mode body.page-operators .board__top th {
+    font-size: clamp(16px, 1.5vw, 30px);
+    padding: clamp(10px, 1vh, 18px) 8px;
+}
+
+html.tv-mode body.page-operators .board__sub th {
+    font-size: clamp(11px, 1vw, 18px);
+    padding: clamp(8px, 0.8vh, 14px) 4px;
+}
+
+html.tv-mode body.page-operators .row-senior td {
+    font-size: clamp(16px, 1.5vw, 28px);
+    padding: clamp(10px, 1vh, 16px);
+}
+
+html.tv-mode body.page-operators .row-location td {
+    padding: clamp(10px, 1vh, 16px) clamp(8px, 0.8vw, 14px);
+}
+
+html.tv-mode body.page-operators .loc-label__prefix,
+html.tv-mode body.page-operators .loc-label__value,
+html.tv-mode body.page-operators .loc-label__value--pos,
+html.tv-mode body.page-operators .loc-comm__value {
+    font-size: clamp(14px, 1.2vw, 24px) !important;
+}
+
+html.tv-mode body.page-operators .row-pilot .cell-name {
+    font-size: clamp(15px, 1.3vw, 26px);
+}
+
+html.tv-mode body.page-operators .row-pilot .cell-equip,
+html.tv-mode body.page-operators .row-pilot .cell-time {
+    font-size: clamp(14px, 1.2vw, 24px);
+}
+
+html.tv-mode body.page-operators .row-pilot--det .cell-otr-col {
+    font-size: clamp(15px, 1.3vw, 26px);
+}
+
+html.tv-mode body.page-operators .det-loc-inline {
+    font-size: clamp(12px, 1vw, 20px);
+}
+
+html.tv-mode body.page-operators .empty-state {
+    font-size: clamp(16px, 1.4vw, 26px);
+    padding: 4vh 2vw;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating {
+    top: 16px;
+    right: 16px;
+    font-size: clamp(16px, 1.4vw, 24px);
+    padding: 14px 24px;
+    transition: opacity 0.25s ease;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"] {
+    opacity: 0;
+}
+
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"]:hover,
+html.tv-mode body.page-operators .operators-tv-btn--floating[aria-pressed="true"]:focus-visible {
+    opacity: 1;
+}

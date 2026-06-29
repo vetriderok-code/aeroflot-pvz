@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Готово — скачать файлы</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0f0f0f;
+            color: #e8e8e8;
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+        .wrap { max-width: 720px; margin: 0 auto; }
+        h1 { color: #66ff99; font-size: 28px; margin-bottom: 8px; }
+        .subtitle { color: #aaa; line-height: 1.6; margin-bottom: 24px; }
+        .stats { color: #ccc; margin-bottom: 20px; line-height: 1.8; }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .downloads { display: flex; flex-wrap: wrap; gap: 12px; }
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 14px 22px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .btn-excel { background: #8B0000; }
+        .btn-excel:hover { background: #a50000; }
+        .btn-kml { background: #2a3a5a; }
+        .btn-kml:hover { background: #3a4f7a; }
+        .btn-back {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            margin-top: 8px;
+        }
+        .btn-back:hover { border-color: #888; color: #fff; }
+        .hint { color: #666; font-size: 13px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Обработка завершена</h1>
+    <p class="subtitle">Файл «{{ meta.source_name }}» обработан. Скачайте нужный формат — повторная загрузка не нужна.</p>
+
+    <p class="stats">
+        Заполнено НП: <strong>{{ meta.total_filled }}</strong><br>
+        Точек в KML: <strong>{{ meta.point_count }}</strong>
+    </p>
+
+    <div class="card">
+        <div class="downloads">
+            <a class="btn btn-excel" href="{% url 'tools-report-download' token=token kind='excel' %}">
+                Скачать Excel ({{ meta.excel_filename }})
+            </a>
+            <a class="btn btn-kml" href="{% url 'tools-report-download' token=token kind='kml' %}">
+                Скачать KML ({{ meta.kml_filename }})
+            </a>
+        </div>
+        <p class="hint">Ссылки действуют 1 час. Можно скачивать оба файла сколько угодно раз.</p>
+    </div>
+
+    <a class="btn btn-back" href="{% url 'tools-report-service' %}">← Загрузить другой файл</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# Деплой на NAS (46.150.107.211): HTTPS через Caddy rocketchat, без публикации 80/443.
+services:
+  telegram-bot-api:
+    profiles: !reset []
+    restart: unless-stopped
+    environment:
+      TELEGRAM_VERBOSITY: 2
+    extra_hosts:
+      - "api.telegram.org:149.154.167.220"
+    networks:
+      - app_network
+
+  tg-bot:
+    profiles: []
+    restart: unless-stopped
+    extra_hosts:
+      - "api.telegram.org:149.154.167.220"
+    volumes:
+      - ./video_files:/code/static/video:rw
+    depends_on:
+      telegram-bot-api:
+        condition: service_started
+      api:
+        condition: service_started
+
+  webserver:
+    container_name: rubicon-gateway
+    ports: !reset []
+    expose:
+      - "80"
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - static_volume:/code/static:rw
+      - ./nginx/conf.d-airlineportal:/etc/nginx/conf.d:ro
+    networks:
+      - app_network
+      - rocketchat_internal
+
+  api:
+    networks:
+      - app_network
+
+  database:
+    networks:
+      - app_network
+
+  redis:
+    ports: !reset []
+    networks:
+      - app_network
+
+networks:
+  rocketchat_internal:
+    external: true
+    name: rocketchat_internal

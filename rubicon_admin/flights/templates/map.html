@@ -1,0 +1,2940 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <title>Карта полетов</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+
+    {% include 'includes/navigation_head.html' %}
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Основной контент */
+        .main-content {
+            display: flex;
+            height: calc(100vh - 60px);
+            width: 100%;
+        }
+
+        /* Карта */
+        .map-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Правая панель с фильтрами и статистикой */
+        .sidebar {
+            width: 350px;
+            background: #1a1a1a;
+            border-left: 1px solid #ff0000;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            background: #330000;
+            border-bottom: 2px solid #ff3333;
+            text-align: center;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            color: #ff6666;
+            font-size: 18px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+            position: relative;
+        }
+        .filter-section-header {
+            display: flex;
+            justify-content: space-between; /* Распределяет элементы по краям */
+            align-items: center; /* Выравнивание по центру по вертикали */
+            cursor: pointer; /* Показывает, что кликабельно */
+            padding: 5px 0; /* Немного отступа */
+            user-select: none; /* Предотвращает выделение текста при двойном клике */
+        }
+        .filter-section-header::after {
+            content: '▼'; /* Стрелочка вниз */
+            font-size: 12px;
+            color: #ff9999;
+            transition: transform 0.3s ease; /* Плавное вращение */
+        }
+        .filter-section.collapsed .filter-section-header::after {
+            transform: rotate(-90deg); /* Поворот стрелочки влево при свернутом состоянии */
+        }
+        .filter-section-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+            max-height: 10000px;
+            opacity: 1;
+        }
+        .filter-section.collapsed .filter-section-content {
+            max-height: 0;
+            opacity: 0;
+            padding: 0 15px; /* Плавное исчезновение padding */
+        }
+        /* Убираем нижнюю границу у последнего элемента в свернутом контенте */
+        .filter-section.collapsed .filter-section-content > :last-child {
+             border-bottom: none;
+             margin-bottom: 0;
+             padding-bottom: 0;
+        }
+        /* Убираем стандартную нижнюю границу у последнего фильтра, если она есть в базовом стиле */
+        .filter-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        /* Дополнительный стиль для последнего фильтра, если он свернут */
+        .filter-section:last-child.collapsed .filter-section-content {
+            padding-bottom: 0;
+        }
+
+
+
+        /* Стили для заголовка дополнительных фильтров */
+        .filter-section h4 {
+            color: #ff6666;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Стили для разделителя между группами чекбоксов */
+        .checkbox-group-separator {
+            height: 1px;
+            background: #ff3333;
+            margin: 10px 0;
+            opacity: 0.5;
+        }
+
+
+        .filter-section label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ff9999;
+            margin-bottom: 5px;
+        }
+
+        .filter-section select, .filter-section input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ff3333;
+            border-radius: 4px;
+            font-size: 13px;
+            box-sizing: border-box;
+            background: #2a2a2a;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .date-filters {
+            display: flex;
+            gap: 10px;
+        }
+
+        .date-filters input {
+            width: calc(50% - 5px);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .filter-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .apply-btn {
+            background: #cc0000;
+            color: white;
+            border: 1px solid #ff3333;
+        }
+
+        .apply-btn:hover {
+            background: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .reset-btn {
+            background: #333333;
+            color: #ff6666;
+            border: 1px solid #666666;
+        }
+
+        .reset-btn:hover {
+            background: #444444;
+            color: #ff9999;
+            box-shadow: 0 0 10px rgba(255, 102, 102, 0.3);
+        }
+        .export-btn {
+            background: #4caf50;
+            color: white;
+            border: 1px solid #45a049;
+        }
+        .export-btn:hover {
+            background: #45a049;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        .export-btn:disabled {
+            background: #666;
+            color: #aaa;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .stats-panel {
+            background: #2a2a2a;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #ff3333;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .stats-header {
+            font-weight: bold;
+            color: #ff6666;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ff3333;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stats-item {
+            font-size: 12px;
+            margin-bottom: 5px;
+            padding: 3px 0;
+            color: #ccc;
+        }
+
+        .stats-item.type {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stats-item.type span:last-child {
+            font-weight: bold;
+            color: #ff9999;
+        }
+
+        .report-video-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .report-video-modal.hidden {
+            display: none;
+        }
+
+        .report-video-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+        }
+
+        .report-video-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(920px, 92vw);
+            background: #1a1a1a;
+            border: 2px solid #ff3333;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+        }
+
+        .report-video-dialog h3 {
+            margin: 0 36px 12px 0;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .report-video-dialog video {
+            width: 100%;
+            max-height: 70vh;
+            background: #000;
+            border-radius: 6px;
+        }
+
+        .report-video-hint {
+            margin: 10px 0 0;
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .report-video-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .tg-report-btn {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #8B0000;
+            color: #fff;
+            border: 1px solid #ff3333;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            z-index: 2000;
+            border: 1px solid #ff0000;
+            color: #ff6666;
+            text-align: center;
+        }
+
+        .result-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .effective { background-color: #00cc00; }
+        .ineffective { background-color: #ff3333; }
+        .no-data {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Scrollbar для темной темы */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ff3333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff0000;
+        }
+
+        .stats-count {
+            color: #ff9999;
+            font-weight: bold;
+        }
+
+        .filters-header h3 {
+            margin: 0;
+            background: linear-gradient(45deg, #ff0000, #8B0000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .today-button-container {
+            margin-top: 10px;
+        }
+
+        .today-btn {
+            width: 100%;
+            padding: 8px 12px; /* Уменьшенный padding */
+            background: linear-gradient(45deg, #4a4a4a, #2a2a2a); /* Темно-серый градиент */
+            color: #cccccc; /* Серый цвет текста */
+            border: 1px solid #555555; /* Темная граница */
+            border-radius: 4px; /* Меньший радиус скругления */
+            cursor: pointer;
+            font-weight: normal; /* Нормальный вес шрифта вместо bold */
+            font-size: 12px; /* Меньший размер шрифта */
+            text-transform: none; /* Убран uppercase */
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease; /* Более быстрая анимация */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Менее выраженная тень */
+        }
+
+        .today-btn:hover {
+            background: linear-gradient(45deg, #5a5a5a, #3a3a3a); /* Немного светлее при наведении */
+            box-shadow: 0 0 5px rgba(100, 100, 100, 0.3); /* Менее яркая тень */
+            color: #eeeeee; /* Белее текст при наведении */
+            transform: none; /* Убрано движение */
+        }
+
+        .today-btn:active {
+            transform: translateY(0); /* Убрано движение при нажатии */
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .today-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(100, 100, 100, 0.3);
+        }
+
+        #updateIndicator {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+            color: #ff9999;
+            font-size: 12px;
+        }
+
+        .update-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ff3333;
+            border-top: 2px solid #ff9999;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Панель автообновления */
+
+        .refresh-btn {
+            background: #333;
+            color: #ff6666;
+        }
+
+        .refresh-btn:hover {
+            background: #444;
+            color: #ff9999;
+            box-shadow: 0 0 10px rgba(255, 102, 102, 0.3);
+        }
+
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            font-size: 14px;
+            font-weight: bold;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.info {
+            background: #3399ff;
+            color: white;
+            border: 1px solid #0066cc;
+        }
+
+        .notification.success {
+            background: #00cc66;
+            color: white;
+            border: 1px solid #00994d;
+        }
+
+        .notification.error {
+            background: #ff3333;
+            color: white;
+            border: 1px solid #cc0000;
+        }
+
+        .notification.warning {
+            background: #ff9900;
+            color: white;
+            border: 1px solid #cc7a00;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Стили для разделителя между группами чекбоксов */
+        .checkbox-group-separator {
+            height: 1px;
+            background: #ff3333;
+            margin: 10px 0;
+            opacity: 0.5;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            /* Основной контент */
+            .main-content {
+                flex-direction: column;
+                height: calc(100vh - 50px);
+            }
+            .sidebar {
+                width: 100%;
+                height: 0;
+                position: absolute;
+                top: 50px;
+                left: 0;
+                z-index: 998;
+                overflow: hidden;
+                transition: height 0.3s ease;
+                border-left: none;
+                border-top: 1px solid #ff0000;
+            }
+            .sidebar.active {
+                height: calc(100vh - 50px);
+            }
+            .sidebar-header {
+                padding: 10px;
+            }
+            .sidebar-header h3 {
+                font-size: 16px;
+            }
+            .filter-toggle-mobile {
+                display: block;
+                position: absolute;
+                left: 10px;
+                right: 10px;
+                background: #cc0000;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                z-index: 999;
+                font-size: 14px;
+                width: fit-content;
+            }
+
+            /* 3. Скрытие панели автообновления */
+            #autoUpdatePanelContainer {
+                display: none !important;
+            }
+
+            /* Скрытие кнопки фильтра на десктопе в мобильной версии */
+            .filter-toggle-mobile {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .filter-toggle-mobile {
+                display: none;
+            }
+        }
+
+    </style>
+    <link rel="stylesheet" href="{% static 'css/tv-mode.css' %}">
+</head>
+<body class="page-map" data-page="map">
+    <!-- ИМПОРТИРУЕМ навигацию из отдельного шаблона -->
+    {% include 'includes/navigation.html' %}
+    <button type="button" class="tv-mode-btn tv-mode-btn--floating" id="btnTvMode" title="Крупный интерфейс для телевизора" aria-pressed="false">
+        <span class="tv-mode-btn__label">📺 Режим ТВ</span>
+    </button>
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="map-container">
+            <div id="map">
+                <button class="filter-toggle-mobile" id="mobileFilterToggle">Фильтр</button>
+            </div>
+            <div id="loading" class="loading">Загрузка карты и данных...</div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Фильтры полетов</h3>
+                <div class="coordinate-info">Координаты: СК-42 → WGS-84 · карта v8</div>
+            </div>
+
+            <div class="sidebar-content">
+                <div class="filter-section">
+                    <label>Пилот:</label>
+                    <select id="pilotFilter">
+                        <option value="">Все пилоты</option>
+                    </select>
+                </div>
+
+                <div class="filter-section" data-filter-id="target">
+                    <div class="filter-section-header">
+                        <label>Тип цели:</label>
+                    </div>
+                    <div class="filter-section-content">
+                        <div id="targetCheckboxesContainer">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="targetCheckboxAll" onchange="toggleAllTargets(this)">
+                                <label for="targetCheckboxAll">Все типы</label>
+                            </div>
+                            <div class="checkbox-group-separator"></div>
+                            <div id="targetCheckboxes" class="checkbox-group">
+                                <!-- Чекбоксы для типов целей будут добавлены сюда динамически -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--<div class="filter-section">
+                    <label>Результат:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="missCheckbox" value="промах" checked>
+                            <label for="missCheckbox">Промах</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hitCheckbox" value="попадание" checked>
+                            <label for="hitCheckbox">Попадание</label>
+                        </div>
+                    </div>
+                </div>-->
+
+                <div class="filter-section">
+                    <label>Поиск по координатам:</label>
+                    <input type="text" id="coordinatesSearch" placeholder="Например: 5350000 7360000 или 5350000,7360000" style="width: 100%; padding: 5px; margin-top: 5px;">
+                    <small style="color: #666; display: block; margin-top: 3px;">Введите координаты X Y (через пробел или запятую)</small>
+                </div>
+
+                <div class="filter-section">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="withVideoFilter" onchange="applyFilters()">
+                        <label for="withVideoFilter">Вылеты с видео (TG-отчёты)</label>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 4px; font-size: 11px;">
+                        Только точки с прикреплённым видео из Отчетного квартала ТД
+                    </small>
+                </div>
+
+                <div class="filter-section">
+                    <label>Дата:</label>
+                    <div class="date-filters">
+                        <input type="date" id="dateFrom" placeholder="С даты" onchange="applyFilters()">
+                        <input type="date" id="dateTo" placeholder="По дату" onchange="applyFilters()">
+                    </div>
+                    <div class="today-button-container">
+                        <button class="today-btn" onclick="showTodayFlights()" title="Показать полеты за сегодня">
+                            📅 Сегодня
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-buttons">
+                    <button class="apply-btn" onclick="applyFilters()">Применить</button>
+                    <button class="reset-btn" onclick="resetFilters()">Сбросить</button>
+                </div>
+                
+                <div class="filter-section" style="margin-top: 20px;">
+                    <label style="display: block; margin-bottom: 10px; color: #ff6666; font-weight: bold;">Экспорт координат:</label>
+                    <button class="btn export-btn" onclick="exportToCSV()" style="width: 100%; padding: 10px; margin-bottom: 8px; background: #2d5016; border-color: #4a7c2a;">
+                        📊 Экспорт в CSV
+                    </button>
+                    <button class="btn export-btn" onclick="exportToKML()" style="width: 100%; padding: 10px; margin-bottom: 8px; background: #1a3d5c; border-color: #2d5f8f;">
+                        🌍 Экспорт в KML (Google Earth)
+                    </button>
+                    <button class="btn export-btn" id="exportGpxBtn" onclick="exportToAlpineQuest()" style="width: 100%; padding: 10px; background: #5a1a3d; border-color: #8a2d5f;">
+                        📍 Экспорт в GPX (AlpineQuest)
+                    </button>
+                    <small style="color: #666; display: block; margin-top: 8px; text-align: center; font-size: 11px;">
+                        Экспортирует отфильтрованные точки в выбранном формате
+                    </small>
+                </div>
+
+                <div class="filter-section" data-filter-id="map-layers">
+                    <div class="filter-section-header">
+                        <label>Слои карты:</label>
+                    </div>
+                    <div class="filter-section-content">
+                        <div id="mapLayersContainer">
+                            <div class="checkbox-item">
+                                <span style="color:#888; font-size:12px;">Загрузка слоёв...</span>
+                            </div>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 8px; font-size: 11px;">
+                            Слои загружаются в админке (LDK, KML, KMZ, GPX, GeoJSON)
+                        </small>
+                    </div>
+                </div>
+
+                <div class="stats-panel">
+                    <div class="stats-header">Статистика полетов</div>
+                    <div id="statisticsContent">
+                        <div class="stats-item no-data">Нет данных для отображения</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportVideoModal" class="report-video-modal hidden" aria-hidden="true">
+        <div class="report-video-backdrop" id="reportVideoBackdrop"></div>
+        <div class="report-video-dialog" role="dialog" aria-modal="true" aria-labelledby="reportVideoTitle">
+            <button type="button" class="report-video-close" id="reportVideoClose" aria-label="Закрыть">&times;</button>
+            <h3 id="reportVideoTitle">Отчёт с видео</h3>
+            <video id="reportVideoPlayer" controls playsinline preload="metadata"></video>
+            <p id="reportVideoHint" class="report-video-hint"></p>
+        </div>
+    </div>
+
+    <script>
+        window.YANDEX_API_KEY = "{{ yandex_api_key }}";
+        window.MAP_GGC_ENABLED = {{ map_ggc_enabled|default:True|yesno:"true,false" }};
+        window.MAP_GGC_TILE_URL = "{{ map_ggc_tile_url|default:'/api/map-tiles/gsh/{z}/{x}/{y}.png'|escapejs }}";
+        window.MAP_GGC_ZOOM_MIN = {{ map_ggc_zoom_min|default:6 }};
+        window.MAP_GGC_ZOOM_MAX = {{ map_ggc_zoom_max|default:15 }};
+        console.log(window.YANDEX_API_KEY);
+        let myMap;
+        let objectManager;
+        let layerObjectManager;
+        let mapLayers = [];
+        let activeLayerIds = new Set();
+        let allFlights = [];
+        let filteredFlights = [];
+        let telegramReports = [];
+        let filteredTelegramReports = [];
+        let telegramReportsById = {};
+        let pilotsList = new Set();
+        let targetsList = new Set();
+        let currentMapBounds = null;
+        let isUpdating = false;
+        let mapInitialized = false;
+        let visibilityListenerAttached = false;
+        let mapRenderGeneration = 0;
+        let mapRefreshTimer = null;
+
+        const RESULT_PRIORITY = { destroyed: 3, defeated: 2, 'not defeated': 1 };
+
+        function flightDedupeKey(flight) {
+            return [
+                flight.pilot_name || '',
+                flight.number ?? '',
+                flight.flight_date || '',
+                flight.coordinates || '',
+            ].join('|');
+        }
+
+        function dedupeFlights(flights) {
+            const byKey = new Map();
+            flights.forEach(flight => {
+                const key = flightDedupeKey(flight);
+                const prev = byKey.get(key);
+                if (!prev || (RESULT_PRIORITY[flight.result] || 0) > (RESULT_PRIORITY[prev.result] || 0)) {
+                    byKey.set(key, flight);
+                }
+            });
+            return Array.from(byKey.values());
+        }
+
+        function loadYandexMap() {
+            if (!window.YANDEX_API_KEY || window.YANDEX_API_KEY === 'None' || window.YANDEX_API_KEY === '') {
+                document.getElementById('loading').innerHTML = 'API ключ не найден. Проверьте настройки.';
+                return;
+            }
+
+            const loadingEl = document.getElementById('loading');
+            const loadTimeout = setTimeout(() => {
+                if (loadingEl && loadingEl.style.display !== 'none') {
+                    loadingEl.innerHTML = 'Карта долго не отвечает. Проверьте интернет и обновите страницу (Ctrl+F5).';
+                }
+            }, 15000);
+
+            const script = document.createElement('script');
+            script.src = `https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=${window.YANDEX_API_KEY}`;
+            script.onload = () => {
+                if (typeof ymaps !== 'undefined') {
+                    ymaps.ready(() => {
+                        clearTimeout(loadTimeout);
+                        try {
+                            init();
+                        } catch (error) {
+                            console.error('init map failed:', error);
+                            if (loadingEl) {
+                                loadingEl.innerHTML = 'Ошибка инициализации карты: ' + error.message;
+                            }
+                        }
+                    });
+                } else {
+                    clearTimeout(loadTimeout);
+                    mapLoadError();
+                }
+            };
+            script.onerror = () => {
+                clearTimeout(loadTimeout);
+                mapLoadError();
+            };
+            document.head.appendChild(script);
+        }
+
+        // Сохраняем границы карты перед применением фильтров
+        function saveCurrentMapBounds() {
+            try {
+                if (myMap && typeof myMap.getBounds === 'function') {
+                    currentMapBounds = myMap.getBounds();
+                    console.log('Сохранены границы карты:', currentMapBounds);
+                }
+            } catch (error) {
+                console.error('Ошибка при сохранении границ карты:', error);
+            }
+        }
+
+        // Восстанавливаем границы карты после обновления точек
+        function restoreMapBounds() {
+            try {
+                if (currentMapBounds && myMap) {
+                    console.log('Восстанавливаем границы карты:', currentMapBounds);
+                    myMap.setBounds(currentMapBounds, {
+                        checkZoomRange: true,
+                        zoomMargin: [20, 20, 20, 20],
+                        duration: 300 // Плавный переход
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при восстановлении границ карты:', error);
+            }
+        }
+
+        function toggleFilterSection(sectionElement) {
+            sectionElement.classList.toggle('collapsed');
+            // Сохраняем состояние в localStorage (опционально)
+            const filterId = sectionElement.getAttribute('data-filter-id');
+            if (filterId) {
+                const isCollapsed = sectionElement.classList.contains('collapsed');
+                try {
+                    localStorage.setItem(`filterCollapsed_${filterId}`, isCollapsed);
+                } catch (e) {
+                    console.warn('Не удалось сохранить состояние фильтра в localStorage:', e);
+                }
+            }
+        }
+
+        // Инициализация состояния сворачивания фильтров при загрузке страницы
+        function initFilterCollapseState() {
+            const filterSections = document.querySelectorAll('.filter-section[data-filter-id]');
+            filterSections.forEach(section => {
+                const filterId = section.getAttribute('data-filter-id');
+                if (filterId) {
+                    try {
+                        const savedState = localStorage.getItem(`filterCollapsed_${filterId}`);
+                        if (savedState !== null) {
+                            const isCollapsed = JSON.parse(savedState);
+                            if (isCollapsed) {
+                                section.classList.add('collapsed');
+                            } else {
+                                section.classList.remove('collapsed'); // На случай, если класс был по умолчанию
+                            }
+                        }
+                        // Если записи нет, фильтр остается в начальном состоянии (развернут)
+                    } catch (e) {
+                        console.warn('Не удалось загрузить состояние фильтра из localStorage:', e);
+                        // Оставляем в начальном состоянии
+                    }
+                }
+                // Добавляем обработчик клика на заголовок фильтра
+                const header = section.querySelector('.filter-section-header');
+                if (header) {
+                    header.addEventListener('click', () => toggleFilterSection(section));
+                }
+            });
+        }
+
+
+        function showTodayFlights() {
+            console.log('Отображаем полеты за сегодня...');
+
+            // Получаем текущую дату в формате YYYY-MM-DD БЕЗ смещения
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayString = `${year}-${month}-${day}`;
+
+            console.log('Сегодняшняя дата:', todayString);
+
+            // Устанавливаем даты "с" и "по" на сегодня
+            document.getElementById('dateFrom').value = todayString;
+            document.getElementById('dateTo').value = todayString;
+
+            // Применяем фильтры как обычно
+            applyFilters();
+
+            // Показываем уведомление
+            showNotification(`Отображаются полеты за ${today.toLocaleDateString('ru-RU')}`, 'info');
+        }
+
+        // Вспомогательная функция для показа уведомлений (опционально)
+        function showNotification(message, type = 'info') {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'info' ? '#3399ff' : type === 'success' ? '#00cc66' : '#ff3333'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 3000;
+                font-size: 14px;
+                font-weight: bold;
+                animation: slideIn 0.3s ease;
+            `;
+
+            // Добавляем анимацию
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.body.appendChild(notification);
+
+            // Автоматически удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 3000);
+        }
+
+        function dedupeFeaturesById(features) {
+            const byId = new Map();
+            features.forEach((feature) => {
+                byId.set(String(feature.id), feature);
+            });
+            return Array.from(byId.values());
+        }
+
+        function refreshMapPoints() {
+            clearTimeout(mapRefreshTimer);
+            mapRefreshTimer = setTimeout(() => {
+                updateFlightsOnMap();
+                updateVisibleStatistics();
+            }, 50);
+        }
+
+        function applyFilters() {
+            console.log('Применяем фильтры...');
+            saveCurrentMapBounds();
+            const filterState = getMapFilterState();
+            console.log('Фильтры:', filterState);
+
+            if (filterState.withVideoOnly) {
+                console.log('Фильтр: только вылеты с прикреплённым видео');
+            }
+
+            filteredFlights = allFlights.filter((flight) => flightPassesMapFilters(flight, filterState));
+            console.log(
+                `Отфильтровано: ${filteredFlights.length} из ${allFlights.length}`
+                + (filterState.dateFrom || filterState.dateTo
+                    ? ` (дата: ${filterState.dateFrom || '…'} — ${filterState.dateTo || '…'})`
+                    : '')
+            );
+
+            syncFilteredTelegramReports(filterState);
+            refreshMapPoints();
+
+            loadTelegramReports().finally(() => {
+                syncFilteredTelegramReports(filterState);
+                refreshMapPoints();
+                setTimeout(restoreMapBounds, 500);
+            });
+        }
+
+        // Альтернативная функция применения фильтров с более точным восстановлением
+        function applyFiltersAdvanced() {
+            console.log('Применяем фильтры (расширенный режим)...');
+
+            // Сохраняем текущие границы и центр карты
+            let savedCenter = null;
+            let savedZoom = null;
+            if (myMap) {
+                savedCenter = myMap.getCenter();
+                savedZoom = myMap.getZoom();
+            }
+
+            const pilotFilter = document.getElementById('pilotFilter').value;
+            const targetFilter = document.getElementById('targetFilter').value;
+
+            // Получаем поиск по координатам
+            const coordinatesSearch = document.getElementById('coordinatesSearch').value.trim();
+            let searchCoords = null;
+            if (coordinatesSearch) {
+                const coordsMatch = coordinatesSearch.match(/(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)/);
+                if (coordsMatch) {
+                    searchCoords = {
+                        x: parseFloat(coordsMatch[1]),
+                        y: parseFloat(coordsMatch[2])
+                    };
+                }
+            }
+
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            // Фильтруем данные
+            filteredFlights = allFlights.filter(flight => {
+                if (pilotFilter && flight.pilot_name !== pilotFilter) return false;
+                if (targetFilter && flight.target !== targetFilter) return false;
+
+                if (!flight.coordinates_info) return false;
+                
+                // Фильтр по поиску координат
+                if (searchCoords) {
+                    const flightCoords = flight.coordinates;
+                    if (flightCoords) {
+                        const flightCoordsMatch = flightCoords.match(/(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)/);
+                        if (flightCoordsMatch) {
+                            const flightX = parseFloat(flightCoordsMatch[1]);
+                            const flightY = parseFloat(flightCoordsMatch[2]);
+                            const tolerance = 100; // метры
+                            const xDiff = Math.abs(flightX - searchCoords.x);
+                            const yDiff = Math.abs(flightY - searchCoords.y);
+                            if (xDiff > tolerance || yDiff > tolerance) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+
+                if (dateFrom || dateTo) {
+                    if (flight.flight_date) {
+                        const flightDate = new Date(flight.flight_date);
+                        if (dateFrom && flightDate < new Date(dateFrom)) return false;
+                        if (dateTo && flightDate > new Date(dateTo)) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            console.log(`Отфильтровано: ${filteredFlights.length} из ${allFlights.length}`);
+
+            // Обновляем точки на карте
+            updateFlightsOnMap();
+
+            // Восстанавливаем позицию карты
+            setTimeout(() => {
+                try {
+                    if (savedCenter && savedZoom && myMap) {
+                        myMap.setCenter(savedCenter, savedZoom, {
+                            duration: 300,
+                            timingFunction: 'ease-in-out'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка при восстановлении позиции карты:', error);
+                    updateVisibleStatistics();
+                }
+            }, 300);
+
+            updateVisibleStatistics();
+        }
+
+        function normalizePilotName(name) {
+            return String(name || '').trim().toLowerCase();
+        }
+
+        function normalizeFlightDate(dateStr) {
+            const raw = String(dateStr || '').trim();
+            if (!raw) {
+                return '';
+            }
+            const isoPrefix = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+            if (isoPrefix) {
+                return isoPrefix[1];
+            }
+            return normalizeWorkDate(raw);
+        }
+
+        function passesDateFilter(dateValue, dateFrom, dateTo, normalizeFn) {
+            if (!dateFrom && !dateTo) {
+                return true;
+            }
+            const normalized = normalizeFn(dateValue);
+            if (!normalized) {
+                return false;
+            }
+            if (dateFrom && normalized < dateFrom) {
+                return false;
+            }
+            if (dateTo && normalized > dateTo) {
+                return false;
+            }
+            return true;
+        }
+
+        function parseCoordinatesSearch(coordinatesSearch) {
+            const trimmed = String(coordinatesSearch || '').trim();
+            if (!trimmed) {
+                return null;
+            }
+            const coordsMatch = trimmed.match(/(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)/);
+            if (!coordsMatch) {
+                return null;
+            }
+            return {
+                x: parseFloat(coordsMatch[1]),
+                y: parseFloat(coordsMatch[2]),
+            };
+        }
+
+        function getMapFilterState() {
+            const pilotFilter = document.getElementById('pilotFilter')?.value || '';
+            const selectedTargets = Array.from(document.querySelectorAll('.target-checkbox:checked')).map((cb) => cb.value);
+            const isTargetFilterActive = selectedTargets.length > 0 && selectedTargets.length < targetsList.size;
+            const coordinatesSearch = document.getElementById('coordinatesSearch')?.value.trim() || '';
+            const dateFrom = document.getElementById('dateFrom')?.value || '';
+            const dateTo = document.getElementById('dateTo')?.value || '';
+
+            return {
+                pilotFilter,
+                selectedTargets,
+                isTargetFilterActive,
+                coordinatesSearch,
+                searchCoords: parseCoordinatesSearch(coordinatesSearch),
+                dateFrom,
+                dateTo,
+                withVideoOnly: isWithVideoFilterActive(),
+            };
+        }
+
+        function flightPassesMapFilters(flight, filterState) {
+            if (filterState.pilotFilter && flight.pilot_name !== filterState.pilotFilter) {
+                return false;
+            }
+            if (filterState.isTargetFilterActive && !filterState.selectedTargets.includes(flight.target)) {
+                return false;
+            }
+            if (!flight.coordinates_info) {
+                return false;
+            }
+
+            const searchCoords = filterState.searchCoords;
+            if (searchCoords) {
+                const flightCoords = flight.coordinates;
+                if (!flightCoords) {
+                    return false;
+                }
+                const flightCoordsMatch = flightCoords.match(/(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?)/);
+                if (!flightCoordsMatch) {
+                    return false;
+                }
+                const flightX = parseFloat(flightCoordsMatch[1]);
+                const flightY = parseFloat(flightCoordsMatch[2]);
+                const tolerance = 100;
+                if (Math.abs(flightX - searchCoords.x) > tolerance || Math.abs(flightY - searchCoords.y) > tolerance) {
+                    return false;
+                }
+            }
+
+            if (!passesDateFilter(
+                flight.flight_date,
+                filterState.dateFrom,
+                filterState.dateTo,
+                normalizeFlightDate
+            )) {
+                return false;
+            }
+
+            return true;
+        }
+
+        function reportPassesMapFilters(report, filterState) {
+            if (filterState.withVideoOnly && !report.has_video) {
+                return false;
+            }
+            return passesDateFilter(
+                report.work_date,
+                filterState.dateFrom,
+                filterState.dateTo,
+                normalizeWorkDate
+            );
+        }
+
+        function normalizeWorkDate(dateStr) {
+            const raw = String(dateStr || '').trim();
+            if (!raw) {
+                return '';
+            }
+            const isoPrefix = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+            if (isoPrefix) {
+                return isoPrefix[1];
+            }
+            const dotted = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+            if (dotted) {
+                let year = dotted[3];
+                if (year.length === 2) {
+                    year = `20${year}`;
+                }
+                return `${year}-${dotted[2].padStart(2, '0')}-${dotted[1].padStart(2, '0')}`;
+            }
+            return raw;
+        }
+
+        function parseSk42Pair(coordsStr) {
+            const match = String(coordsStr || '').match(/(\d{6,8})\s*[,;\s]\s*(\d{6,8})/);
+            if (!match) {
+                return null;
+            }
+            return [parseFloat(match[1]), parseFloat(match[2])];
+        }
+
+        function coordsMatch(left, right, tolerance = 200) {
+            const a = parseSk42Pair(left);
+            const b = parseSk42Pair(right);
+            if (!a || !b) {
+                return false;
+            }
+            return Math.abs(a[0] - b[0]) <= tolerance && Math.abs(a[1] - b[1]) <= tolerance;
+        }
+
+        function flightWgs84(flight) {
+            const coord = flight?.coordinates_info;
+            if (!coord) {
+                return null;
+            }
+            const lat = typeof coord.lat_wgs84 === 'number' ? coord.lat_wgs84 : parseFloat(coord.lat_wgs84);
+            const lon = typeof coord.lon_wgs84 === 'number' ? coord.lon_wgs84 : parseFloat(coord.lon_wgs84);
+            if (isNaN(lat) || isNaN(lon) || (lat === 90.0 && lon === 0.0)) {
+                return null;
+            }
+            return { lat, lon };
+        }
+
+        function reportWgs84(report) {
+            const lat = parseFloat(report.lat);
+            const lon = parseFloat(report.lng);
+            if (isNaN(lat) || isNaN(lon) || (lat === 90.0 && lon === 0.0)) {
+                return null;
+            }
+            return { lat, lon };
+        }
+
+        function wgs84DistanceMeters(a, b) {
+            const toRad = (deg) => deg * Math.PI / 180;
+            const earthRadius = 6371000;
+            const dLat = toRad(b.lat - a.lat);
+            const dLon = toRad(b.lon - a.lon);
+            const lat1 = toRad(a.lat);
+            const lat2 = toRad(b.lat);
+            const h = Math.sin(dLat / 2) ** 2
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+            return 2 * earthRadius * Math.asin(Math.min(1, Math.sqrt(h)));
+        }
+
+        function reportCoordsMatchFlight(report, flight, tolerance = 200) {
+            if (coordsMatch(report.coordinates, flight.coordinates, tolerance)) {
+                return true;
+            }
+            const reportPoint = reportWgs84(report);
+            const flightPoint = flightWgs84(flight);
+            if (!reportPoint || !flightPoint) {
+                return false;
+            }
+            return wgs84DistanceMeters(reportPoint, flightPoint) <= tolerance;
+        }
+
+        function reportMatchTier(report, flight) {
+            if (!reportCoordsMatchFlight(report, flight)) {
+                return 0;
+            }
+            const pilotMatch = normalizePilotName(report.pilot_name) === normalizePilotName(flight.pilot_name);
+            const reportDate = normalizeWorkDate(report.work_date);
+            const flightDate = String(flight.flight_date || '').trim();
+            const dateMatch = !reportDate || !flightDate || reportDate === flightDate;
+            if (pilotMatch && dateMatch) {
+                return 3;
+            }
+            if (pilotMatch) {
+                return 2;
+            }
+            return 1;
+        }
+
+        function findReportForFlight(flight) {
+            let best = null;
+            let bestTier = 0;
+            filteredTelegramReports.forEach((report) => {
+                const tier = reportMatchTier(report, flight);
+                if (!tier) {
+                    return;
+                }
+                const betterTier = tier > bestTier;
+                const sameTierPreferVideo = tier === bestTier && report.has_video && !best?.has_video;
+                if (betterTier || sameTierPreferVideo) {
+                    best = report;
+                    bestTier = tier;
+                }
+            });
+            return best;
+        }
+
+        function hasExcelFlightNearby(report, flights) {
+            for (const flight of flights) {
+                if (reportCoordsMatchFlight(report, flight)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function buildVideoButton(report) {
+            if (!report || !report.has_video) {
+                return '';
+            }
+            return `<div style="margin-top:8px;">
+                <button type="button" class="tg-report-btn" data-report-id="${report.id}">▶ Смотреть видео</button>
+            </div>`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function buildTelegramReportFeatures(linkedReportIds, flightsForCoordDedup) {
+            const features = [];
+            const linked = linkedReportIds || new Set();
+            const flightsNearby = flightsForCoordDedup || [];
+            filteredTelegramReports.forEach((report) => {
+                if (linked.has(report.id)) {
+                    return;
+                }
+                if (hasExcelFlightNearby(report, flightsNearby)) {
+                    return;
+                }
+                const latNum = parseFloat(report.lat);
+                const lonNum = parseFloat(report.lng);
+                if (isNaN(latNum) || isNaN(lonNum)) {
+                    return;
+                }
+
+                let preset = 'islands#blueCircleDotIcon';
+                if (report.result === 'defeated') {
+                    preset = 'islands#orangeCircleDotIcon';
+                } else if (report.result === 'not defeated') {
+                    preset = 'islands#grayCircleDotIcon';
+                }
+
+                const videoBtn = report.has_video
+                    ? `<button type="button" class="tg-report-btn" data-report-id="${report.id}">▶ Смотреть видео</button>`
+                    : '<div style="margin-top:8px;color:#888;">Видео не прикреплено</div>';
+
+                features.push({
+                    type: 'Feature',
+                    id: `tg-${report.id}`,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [latNum, lonNum],
+                    },
+                    properties: {
+                        reportId: report.id,
+                        isTelegramReport: true,
+                        balloonContentHeader: `<strong>TG отчёт №${report.flight_number}</strong>`,
+                        balloonContentBody: `
+                            <div style="max-width: 350px; color: #000;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <tr><td><strong>Пилот:</strong></td><td>${escapeHtml(report.pilot_name) || 'Не указан'}</td></tr>
+                                    <tr><td><strong>Дата:</strong></td><td>${escapeHtml(report.work_date) || '—'}</td></tr>
+                                    <tr><td><strong>Результат:</strong></td><td>${escapeHtml(report.result_text || report.result) || '—'}</td></tr>
+                                    <tr><td><strong>Координаты:</strong></td><td>${escapeHtml(report.coordinates) || '—'}</td></tr>
+                                </table>
+                                ${videoBtn}
+                            </div>
+                        `,
+                        hintContent: `TG №${report.flight_number} · ${report.pilot_name || 'Без пилота'}`,
+                    },
+                    options: { preset },
+                });
+            });
+            return features;
+        }
+
+        function closeReportVideoModal() {
+            const modal = document.getElementById('reportVideoModal');
+            const player = document.getElementById('reportVideoPlayer');
+            if (!modal || !player) {
+                return;
+            }
+            player.pause();
+            player.removeAttribute('src');
+            player.load();
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function openReportVideoModal(reportId) {
+            const report = telegramReportsById[reportId];
+            if (!report || !report.has_video) {
+                showNotification('Видео для этого отчёта недоступно', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('reportVideoModal');
+            const player = document.getElementById('reportVideoPlayer');
+            const title = document.getElementById('reportVideoTitle');
+            const hint = document.getElementById('reportVideoHint');
+
+            title.textContent = `Вылет №${report.flight_number} · ${report.pilot_name || 'Без пилота'}`;
+            hint.textContent = report.video_cached
+                ? 'Видео с сервера'
+                : 'Видео загружается на сервер — если не откроется, обновите страницу через несколько минут';
+            player.src = `/api/telegram_reports/${reportId}/video/`;
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+            player.play().catch(() => {});
+        }
+
+        function setupReportVideoModal() {
+            const closeBtn = document.getElementById('reportVideoClose');
+            const backdrop = document.getElementById('reportVideoBackdrop');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeReportVideoModal);
+            }
+            if (backdrop) {
+                backdrop.addEventListener('click', closeReportVideoModal);
+            }
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeReportVideoModal();
+                }
+            });
+        }
+
+        function setupTelegramReportMapEvents() {
+            if (!objectManager) {
+                return;
+            }
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('.tg-report-btn');
+                if (!button) {
+                    return;
+                }
+                const reportId = button.getAttribute('data-report-id');
+                if (reportId) {
+                    openReportVideoModal(reportId);
+                }
+            });
+        }
+
+        function isWithVideoFilterActive() {
+            return !!document.getElementById('withVideoFilter')?.checked;
+        }
+
+        function syncFilteredTelegramReports(filterState) {
+            const state = filterState || getMapFilterState();
+            filteredTelegramReports = telegramReports.filter((item) => reportPassesMapFilters(item, state));
+        }
+
+        function loadTelegramReports() {
+            const url = isWithVideoFilterActive()
+                ? '/api/telegram_reports/map/?with_video=1'
+                : '/api/telegram_reports/map/';
+            return fetch(url)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    telegramReports = Array.isArray(data) ? data : [];
+                    syncFilteredTelegramReports(getMapFilterState());
+                    telegramReportsById = Object.fromEntries(
+                        telegramReports.map((item) => [item.id, item])
+                    );
+                    console.log('TG-отчётов на карте:', filteredTelegramReports.length, '/', telegramReports.length);
+                })
+                .catch((error) => {
+                    console.error('Ошибка загрузки TG-отчётов:', error);
+                    telegramReports = [];
+                    filteredTelegramReports = [];
+                    telegramReportsById = {};
+                });
+        }
+
+        // Обновленная функция updateFlightsOnMap без автоматического изменения границ
+        function updateFlightsOnMap() {
+            const renderId = ++mapRenderGeneration;
+            console.log('Обновляем точки на карте...', renderId);
+            if (!objectManager) {
+                return;
+            }
+
+            const geoObjects = [];
+            const linkedReportIds = new Set();
+            const flightsForCoordDedup = dedupeFlights(filteredFlights);
+            let flightsToRender = [...flightsForCoordDedup];
+            let linkedWithVideo = 0;
+
+            const linkedReportByFlightId = new Map();
+            flightsForCoordDedup.forEach((flight) => {
+                const linked = findReportForFlight(flight);
+                if (!linked) {
+                    return;
+                }
+                linkedReportByFlightId.set(flight.id, linked);
+                linkedReportIds.add(linked.id);
+            });
+
+            if (isWithVideoFilterActive()) {
+                flightsToRender = flightsToRender.filter((flight) => {
+                    const linked = linkedReportByFlightId.get(flight.id);
+                    if (linked?.has_video) {
+                        linkedWithVideo += 1;
+                        return true;
+                    }
+                    return false;
+                });
+            }
+
+            let skipped_no_coords = 0;
+            let skipped_invalid_coords = 0;
+            let added_count = 0;
+            
+            flightsToRender.forEach((flight, index) => {
+                if (!flight.coordinates_info) {
+                    skipped_no_coords++;
+                    if (skipped_no_coords <= 5) {
+                        console.log(`Пропущен полет ${index}: нет coordinates_info`, flight.id);
+                    }
+                    return;
+                }
+
+                const coord = flight.coordinates_info;
+
+                // Проверяем координаты более гибко
+                const lat = coord.lat_wgs84;
+                const lon = coord.lon_wgs84;
+                
+                // Преобразуем в числа, если это строки
+                const latNum = typeof lat === 'number' ? lat : parseFloat(lat);
+                const lonNum = typeof lon === 'number' ? lon : parseFloat(lon);
+                
+                if (isNaN(latNum) || isNaN(lonNum) || latNum === null || lonNum === null) {
+                    skipped_invalid_coords++;
+                    if (skipped_invalid_coords <= 5) {
+                        console.log(`Пропущен полет ${index}: невалидные координаты`, flight.id, {lat, lon, latNum, lonNum});
+                    }
+                    return;
+                }
+                
+                // Пропускаем дефолтные координаты (90.0, 0.0)
+                if (latNum === 90.0 && lonNum === 0.0) {
+                    skipped_invalid_coords++;
+                    return;
+                }
+
+                let preset = 'islands#redIcon'; // destroyed по умолчанию
+                if (flight.result === 'defeated') {
+                    preset = 'islands#orangeIcon';
+                } else if (flight.result === 'not defeated') {
+                    preset = 'islands#greyIcon';
+                }
+
+                const linkedReport = linkedReportByFlightId.get(flight.id) || null;
+                const videoSection = buildVideoButton(linkedReport);
+                const hintSuffix = linkedReport && linkedReport.has_video ? ' · 📹' : '';
+
+                const feature = {
+                    type: 'Feature',
+                    id: flight.id,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [latNum, lonNum]
+                    },
+                    properties: {
+                        balloonContentHeader: `<strong>Полет №${flight.number}</strong>`,
+                        balloonContentBody: `
+                            <div style="max-width: 350px; color: #000;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <tr><td><strong>Пилот:</strong></td><td>${escapeHtml(flight.pilot_name) || 'Не указан'}</td></tr>
+                                    <tr><td><strong>Дрон:</strong></td><td>${escapeHtml(flight.drone) || 'Не указан'}</td></tr>
+                                    <tr><td><strong>Дата:</strong></td><td>${formatDate(flight.flight_date)}</td></tr>
+                                    <tr><td><strong>Время:</strong></td><td>${escapeHtml(flight.flight_time) || 'Не указано'}</td></tr>
+                                    <tr><td><strong>Тип цели:</strong></td><td>${escapeHtml(flight.target) || 'Не указана'}</td></tr>
+                                    <tr><td><strong>Результат:</strong></td><td>${getResultDisplay(flight.result)}</td></tr>
+                                    <tr><td><strong>Координаты:</strong></td><td>${escapeHtml(flight.coordinates) || 'Не указаны'}</td></tr>
+                                </table>
+                                <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid #eee;">
+                                    <small><strong>Комментарий:</strong><br>
+                                    ${escapeHtml(flight.comment)}</small>
+                                </div>
+                                ${videoSection}
+                            </div>
+                        `,
+                        hintContent: `Полет №${flight.number} - ${flight.pilot_name || 'Без пилота'}${hintSuffix}`
+                    },
+                    options: {
+                        preset: preset
+                    }
+                };
+
+                geoObjects.push(feature);
+                added_count++;
+            });
+
+            console.log(
+                `Привязано TG-видео к Excel: ${linkedReportIds.size}`
+                + (isWithVideoFilterActive() ? `, Excel с видео: ${linkedWithVideo}` : '')
+            );
+            const uniqueFeatures = dedupeFeaturesById(geoObjects);
+
+            if (renderId !== mapRenderGeneration) {
+                console.log(`Пропуск устаревшей отрисовки #${renderId}, актуальна #${mapRenderGeneration}`);
+                return;
+            }
+
+            console.log(
+                `Добавлено точек на карту: ${uniqueFeatures.length}`
+                + ` (собрано: ${added_count}, дублей id: ${added_count - uniqueFeatures.length})`
+                + `, пропущено без координат: ${skipped_no_coords}`
+                + `, невалидных: ${skipped_invalid_coords}`
+            );
+            console.log(`Всего отфильтровано полетов: ${filteredFlights.length}, уникальных на карте: ${flightsToRender.length}`);
+
+            if (uniqueFeatures.length > filteredFlights.length + 5) {
+                console.error(
+                    `⚠️ Аномалия: на карте ${uniqueFeatures.length} точек при ${filteredFlights.length} отфильтрованных.`
+                    + ` Версия JS: ${window.MAP_JS_VERSION || 'unknown'}`
+                );
+            }
+
+            objectManager.removeAll();
+
+            if (uniqueFeatures.length > 0) {
+                objectManager.add({
+                    type: 'FeatureCollection',
+                    features: uniqueFeatures,
+                });
+                console.log('Точки добавлены на карту:', uniqueFeatures.length);
+                setTimeout(updateVisibleStatistics, 200);
+            } else {
+                console.log('Нет точек для отображения');
+                updateVisibleStatistics();
+            }
+
+            setupVisibilityListener();
+        }
+
+        function collectFilterValues() {
+            pilotsList.clear();
+            targetsList.clear();
+
+            allFlights.forEach(flight => {
+                if (flight.pilot_name) pilotsList.add(flight.pilot_name);
+                if (flight.target) targetsList.add(flight.target);
+            });
+        }
+
+        function populateFilterDropdowns() {
+            const pilotSelect = document.getElementById('pilotFilter');
+            const targetCheckboxesContainer = document.getElementById('targetCheckboxes'); // Новый контейнер
+
+            // Очищаем выпадающий список пилотов
+            pilotSelect.innerHTML = '<option value="">Все пилоты</option>';
+            // Очищаем контейнер чекбоксов целей
+            targetCheckboxesContainer.innerHTML = '';
+
+            // Заполняем выпадающий список пилотов
+            Array.from(pilotsList).sort().forEach(pilot => {
+                const option = document.createElement('option');
+                option.value = pilot;
+                option.textContent = pilot;
+                pilotSelect.appendChild(option);
+            });
+
+            // Заполняем чекбоксы целей
+            const sortedTargets = Array.from(targetsList).sort();
+            sortedTargets.forEach(target => {
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `targetCheckbox_${target}`; // Уникальный ID
+                checkbox.value = target;
+                checkbox.checked = true; // По умолчанию все отмечены
+                checkbox.className = 'target-checkbox'; // Класс для поиска
+
+                const label = document.createElement('label');
+                label.htmlFor = `targetCheckbox_${target}`;
+                label.textContent = target;
+
+                checkboxItem.appendChild(checkbox);
+                checkboxItem.appendChild(label);
+                targetCheckboxesContainer.appendChild(checkboxItem);
+            });
+
+            // Устанавливаем состояние "Все типы" после заполнения
+            updateSelectAllCheckbox();
+
+            if (!window.isFilterCollapseInitialized) {
+                 initFilterCollapseState();
+                 window.isFilterCollapseInitialized = true;
+            }
+        }
+
+                // Функция для управления чекбоксом "Все типы"
+        function toggleAllTargets(masterCheckbox) {
+            const targetCheckboxes = document.querySelectorAll('.target-checkbox');
+            targetCheckboxes.forEach(cb => {
+                cb.checked = masterCheckbox.checked;
+            });
+        }
+
+        // Функция для обновления состояния чекбокса "Все типы"
+        function updateSelectAllCheckbox() {
+            const masterCheckbox = document.getElementById('targetCheckboxAll');
+            const targetCheckboxes = document.querySelectorAll('.target-checkbox');
+            if (targetCheckboxes.length === 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+                return;
+            }
+
+            const checkedCount = Array.from(targetCheckboxes).filter(cb => cb.checked).length;
+
+            if (checkedCount === 0) {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+            } else if (checkedCount === targetCheckboxes.length) {
+                masterCheckbox.checked = true;
+                masterCheckbox.indeterminate = false;
+            } else {
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = true; // Частично выбран
+            }
+        }
+
+        // Обновляем updateSelectAllCheckbox при изменении любого чекбокса цели
+        document.addEventListener('change', function(e) {
+             if (e.target && e.target.classList.contains('target-checkbox')) {
+                 updateSelectAllCheckbox();
+                 // Опционально: автоматически применять фильтры при изменении чекбокса
+                 applyFilters();
+             }
+        });
+
+        function resetFilters() {
+            document.getElementById('pilotFilter').value = '';
+            document.querySelectorAll('.target-checkbox').forEach(cb => cb.checked = true);
+            document.getElementById('targetCheckboxAll').checked = true;
+            document.getElementById('targetCheckboxAll').indeterminate = false;
+
+            document.getElementById('coordinatesSearch').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            const withVideoFilter = document.getElementById('withVideoFilter');
+            if (withVideoFilter) {
+                withVideoFilter.checked = false;
+            }
+
+            filteredFlights = [...allFlights];
+            loadTelegramReports().finally(() => {
+                syncFilteredTelegramReports(getMapFilterState());
+                refreshMapPoints();
+            });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Не указана';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        }
+
+        function getResultDisplay(result) {
+            switch(result) {
+                case 'destroyed':
+                    return '<span style="color: #ff0000;">✗ Уничтожен</span>';
+                case 'defeated':
+                    return '<span style="color: #ff9900;">⚠ Поражен</span>';
+                case 'not defeated':
+                    return '<span style="color: #888888;">○ Не поражен</span>';
+                default:
+                    return result || 'Не указан';
+            }
+        }
+
+        function getVisibleFlights() {
+            try {
+                const mapBounds = myMap.getBounds();
+                if (!mapBounds) return [];
+
+                const [[south, west], [north, east]] = mapBounds;
+
+                const visibleFlightsArray = [];
+
+                filteredFlights.forEach(flight => {
+                    if (!flight.coordinates_info) return;
+
+                    const coord = flight.coordinates_info;
+                    const lat = coord.lat_wgs84;
+                    const lon = coord.lon_wgs84;
+
+                    if (lat >= south && lat <= north && lon >= west && lon <= east) {
+                        visibleFlightsArray.push(flight);
+                    }
+                });
+
+                return visibleFlightsArray;
+            } catch (error) {
+                console.error('Ошибка при определении видимых объектов:', error);
+                return [];
+            }
+        }
+
+        function updateVisibleStatistics() {
+            const currentlyVisibleFlights = getVisibleFlights();
+            visibleFlights = currentlyVisibleFlights;
+
+            const statsContent = document.getElementById('statisticsContent');
+
+            if (currentlyVisibleFlights.length === 0) {
+                statsContent.innerHTML = `
+                    <div class="stats-item no-data">Нет видимых полетов</div>
+                    <div class="stats-item">Всего отфильтровано: ${filteredFlights.length}</div>
+                `;
+                return;
+            }
+
+            let minDate = null;
+            let maxDate = null;
+            const targetCounts = {};
+            const resultCounts = {};
+            let successfulFlights = 0;
+
+            currentlyVisibleFlights.forEach(flight => {
+                if (flight.flight_date) {
+                    const flightDate = new Date(flight.flight_date);
+                    if (!minDate || flightDate < minDate) minDate = flightDate;
+                    if (!maxDate || flightDate > maxDate) maxDate = flightDate;
+                }
+
+                const target = flight.target || 'Не указана';
+                targetCounts[target] = (targetCounts[target] || 0) + 1;
+
+                const result = flight.result || 'Не указан';
+                resultCounts[result] = (resultCounts[result] || 0) + 1;
+
+                if (flight.result === 'destroyed' || flight.result === 'defeated') {
+                    successfulFlights++;
+                }
+            });
+
+            let html = '';
+            html += `<div class="stats-item"><strong>Видимо: ${currentlyVisibleFlights.length} из ${filteredFlights.length}</strong></div>`;
+
+            if (minDate && maxDate) {
+                html += `<div class="stats-item">Период: ${minDate.toLocaleDateString('ru-RU')} - ${maxDate.toLocaleDateString('ru-RU')}</div>`;
+            } else {
+                html += `<div class="stats-item">Период не определен</div>`;
+            }
+
+            html += '<div style="margin: 10px 0; border-top: 1px solid #ff3333; padding-top: 10px;"></div>';
+
+            html += '<div style="margin-bottom: 10px;"><strong>По типам целей:</strong></div>';
+            const sortedTargets = Object.keys(targetCounts)
+                .map(target => ({ target, count: targetCounts[target] }))
+                .sort((a, b) => b.count - a.count)
+                .map(item => item.target);
+
+            sortedTargets.forEach(target => {
+                html += `<div class="stats-item type"><span>${target}:</span> <span class="stats-count">${targetCounts[target]}</span></div>`;
+            });
+
+            html += '<div style="margin: 10px 0; border-top: 1px solid #666; padding-top: 10px;"></div>';
+
+            html += '<div style="margin-bottom: 10px;"><strong>Общая статистика:</strong></div>';
+            html += `<div class="stats-item type"><span>Всего вылетов:</span> <span class="stats-count">${currentlyVisibleFlights.length}</span></div>`;
+            html += `<div class="stats-item type"><span>Успешно:</span> <span class="stats-count">${successfulFlights}</span></div>`;
+
+            if (currentlyVisibleFlights.length > 0) {
+                const successRate = Math.round((successfulFlights / currentlyVisibleFlights.length) * 100);
+                html += `<div class="stats-item type"><span>Процент успеха:</span> <span class="stats-count">${successRate}%</span></div>`;
+            }
+
+            html += '<div style="margin: 10px 0; border-top: 1px solid #666; padding-top: 10px;"></div>';
+            html += '<div style="margin-bottom: 10px;"><strong>По результатам:</strong></div>';
+            const sortedResults = Object.keys(resultCounts)
+                .map(result => ({ result, count: resultCounts[result] }))
+                .sort((a, b) => b.count - a.count)
+                .map(item => item.result);
+
+            sortedResults.forEach(result => {
+                html += `<div class="stats-item type"><span>${getResultDisplay(result)}:</span> <span class="stats-count">${resultCounts[result]}</span></div>`;
+            });
+
+            statsContent.innerHTML = html;
+        }
+
+        function setupVisibilityListener() {
+            if (visibilityListenerAttached || !myMap) {
+                return;
+            }
+            visibilityListenerAttached = true;
+            let boundsChangeTimeout;
+
+            myMap.events.add('boundschange', function() {
+                clearTimeout(boundsChangeTimeout);
+                boundsChangeTimeout = setTimeout(updateVisibleStatistics, 300);
+            });
+
+            let zoomTimeout;
+            myMap.events.add('zoomend', function() {
+                clearTimeout(zoomTimeout);
+                zoomTimeout = setTimeout(updateVisibleStatistics, 300);
+            });
+
+            let moveTimeout;
+            myMap.events.add('moveend', function() {
+                clearTimeout(moveTimeout);
+                moveTimeout = setTimeout(updateVisibleStatistics, 300);
+            });
+        }
+
+
+
+
+        // Функция показа уведомлений
+        function showNotification(message, type = 'info') {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'info' ? '#3399ff' : type === 'success' ? '#00cc66' : type === 'warning' ? '#ff9900' : '#ff3333'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 2000;
+                font-size: 14px;
+                font-weight: bold;
+                animation: slideIn 0.3s ease;
+                border: 1px solid ${type === 'info' ? '#0066cc' : type === 'success' ? '#00994d' : type === 'warning' ? '#cc7a00' : '#cc0000'};
+            `;
+
+            // Добавляем анимацию
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.body.appendChild(notification);
+
+            // Автоматически удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 3000);
+        }
+
+        function buildGgcTileUrl(tileNumber, zoom) {
+            const template = window.MAP_GGC_TILE_URL || '';
+            if (!template) {
+                return '';
+            }
+            const zoomMin = Number(window.MAP_GGC_ZOOM_MIN) || 6;
+            const zoomMax = Number(window.MAP_GGC_ZOOM_MAX) || 15;
+            if (zoom < zoomMin || zoom > zoomMax) {
+                return null;
+            }
+            const x = tileNumber[0];
+            const y = tileNumber[1];
+            const tmsY = Math.pow(2, zoom) - y - 1;
+            const subdomains = ['a', 'b', 'c'];
+            const subdomain = subdomains[(x + y) % subdomains.length];
+            return template
+                .replace(/\{s\}/g, subdomain)
+                .replace(/\{z\}/g, String(zoom))
+                .replace(/\{x\}/g, String(x))
+                .replace(/\{y\}/g, String(y))
+                .replace(/\{-y\}/g, String(tmsY))
+                .replace(/\{z\+1\}/g, String(zoom + 1))
+                .replace(/\{x\/1024\}/g, String(Math.floor(x / 1024)))
+                .replace(/\{y\/1024\}/g, String(Math.floor(y / 1024)));
+        }
+
+        function getGgcTileAtCenter(zoom) {
+            if (!myMap) {
+                return null;
+            }
+            const projection = ymaps.projection.sphericalMercator;
+            const globalPixelPoint = projection.toGlobalPixels(myMap.getCenter(), zoom);
+            return {
+                z: zoom,
+                x: Math.floor(globalPixelPoint[0] / 256),
+                y: Math.floor(globalPixelPoint[1] / 256),
+            };
+        }
+
+        function notifyGgcTilesUnavailable() {
+            showNotification(
+                'Подложка ГосГисЦентр недоступна: публичные серверы закрыты. '
+                + 'Укажите MAP_GSH_CACHE_DIR — папку кэша SAS Planet на сервере.',
+                'warning'
+            );
+        }
+
+        function verifyGgcTilesAvailable() {
+            const zoomMin = Number(window.MAP_GGC_ZOOM_MIN) || 6;
+            const tile = getGgcTileAtCenter(Math.max(myMap.getZoom(), zoomMin));
+            if (!tile) {
+                return;
+            }
+            const url = buildGgcTileUrl([tile.x, tile.y], tile.z);
+            if (!url) {
+                return;
+            }
+            fetch(url, { credentials: 'same-origin', method: 'HEAD' })
+                .then(function(response) {
+                    if (!response.ok) {
+                        notifyGgcTilesUnavailable();
+                    }
+                })
+                .catch(function() {
+                    notifyGgcTilesUnavailable();
+                });
+        }
+
+        function setupGgcMapTypeBehavior(ggcMapTypeId) {
+            if (!ggcMapTypeId || !myMap) {
+                return;
+            }
+            myMap.events.add('typechange', function() {
+                if (myMap.getType() !== ggcMapTypeId) {
+                    return;
+                }
+                const zoomMin = Number(window.MAP_GGC_ZOOM_MIN) || 6;
+                if (myMap.getZoom() < zoomMin) {
+                    myMap.setZoom(zoomMin, { duration: 200 });
+                }
+                setTimeout(verifyGgcTilesAvailable, 400);
+            });
+        }
+
+        function registerGgcMapType() {
+            if (!window.MAP_GGC_ENABLED || !window.MAP_GGC_TILE_URL) {
+                return null;
+            }
+
+            const zoomMin = Number(window.MAP_GGC_ZOOM_MIN) || 6;
+            const zoomMax = Number(window.MAP_GGC_ZOOM_MAX) || 15;
+            const layerFactory = function() {
+                const layer = new ymaps.Layer('', {
+                    projection: ymaps.projection.sphericalMercator,
+                });
+                layer.getTileUrl = function(tileNumber, zoom) {
+                    return buildGgcTileUrl(tileNumber, zoom);
+                };
+                layer.getZoomRange = function() {
+                    return ymaps.vow.resolve([zoomMin, zoomMax]);
+                };
+                return layer;
+            };
+
+            ymaps.layer.storage.add('custom#ggc', layerFactory);
+            const ggcMapType = new ymaps.MapType('ГосГисЦентр', ['custom#ggc']);
+            ymaps.mapType.storage.add('custom#ggc', ggcMapType);
+            return 'custom#ggc';
+        }
+
+        function attachGgcMapType(ggcMapTypeId) {
+            if (!ggcMapTypeId || !myMap) {
+                return;
+            }
+            try {
+                const typeSelector = myMap.controls.get('typeSelector');
+                if (typeSelector && typeof typeSelector.addMapType === 'function') {
+                    typeSelector.addMapType(ggcMapTypeId, 12);
+                }
+            } catch (error) {
+                console.warn('ГосГисЦентр: не удалось добавить в переключатель слоёв:', error);
+            }
+        }
+
+        function init() {
+            if (mapInitialized) {
+                console.warn('Карта уже инициализирована, пропуск повторного init');
+                return;
+            }
+            mapInitialized = true;
+            console.log('Инициализация карты...');
+            const loadingEl = document.getElementById('loading');
+
+            try {
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+
+                myMap = new ymaps.Map("map", {
+                    center: [55.7558, 37.6176],
+                    zoom: 3,
+                    type: 'yandex#hybrid',
+                    controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
+                });
+
+                objectManager = new ymaps.ObjectManager({
+                    clusterize: true,
+                    gridSize: 64,
+                    clusterDisableClickZoom: false
+                });
+
+                objectManager.clusters.options.set({
+                    preset: 'islands#invertedRedClusterIcons'
+                });
+
+                myMap.geoObjects.add(objectManager);
+                setupReportVideoModal();
+                setupTelegramReportMapEvents();
+
+                layerObjectManager = new ymaps.ObjectManager({
+                    clusterize: false,
+                });
+                myMap.geoObjects.add(layerObjectManager);
+
+                let ggcMapTypeId = null;
+                try {
+                    ggcMapTypeId = registerGgcMapType();
+                } catch (error) {
+                    console.warn('ГосГисЦентр: слой недоступен:', error);
+                }
+                attachGgcMapType(ggcMapTypeId);
+                setupGgcMapTypeBehavior(ggcMapTypeId);
+            } catch (error) {
+                console.error('init map failed:', error);
+                if (loadingEl) {
+                    loadingEl.style.display = 'block';
+                    loadingEl.innerHTML = 'Ошибка инициализации карты: ' + error.message;
+                }
+                return;
+            }
+
+            loadMapLayers();
+            loadFlights();
+        }
+
+        function geoJsonToYandexFeatures(layer) {
+            const features = [];
+            const geojson = layer.geojson;
+            if (!geojson || !geojson.features) {
+                return features;
+            }
+
+            geojson.features.forEach((feature, index) => {
+                const geom = feature.geometry;
+                if (!geom || !geom.coordinates) {
+                    return;
+                }
+
+                const props = feature.properties || {};
+                const name = props.name || layer.name;
+                let yandexCoords;
+
+                if (geom.type === 'Point') {
+                    const [lon, lat] = geom.coordinates;
+                    yandexCoords = [lat, lon];
+                } else if (geom.type === 'LineString') {
+                    yandexCoords = geom.coordinates.map(([lon, lat]) => [lat, lon]);
+                } else if (geom.type === 'Polygon') {
+                    yandexCoords = geom.coordinates.map(ring =>
+                        ring.map(([lon, lat]) => [lat, lon])
+                    );
+                } else {
+                    return;
+                }
+
+                const isLine = geom.type === 'LineString';
+                const isPolygon = geom.type === 'Polygon';
+                const featureId = `layer-${layer.id}-${index}`;
+                const strokeColor = props.color || layer.color;
+                const strokeWidth = props.stroke_width || layer.stroke_width;
+                const description = props.description || '';
+                const balloonBody = [
+                    name ? `<div><strong>${name}</strong></div>` : '',
+                    description ? `<div style="margin-top:6px;color:#444;">${description}</div>` : '',
+                ].join('');
+
+                features.push({
+                    type: 'Feature',
+                    id: featureId,
+                    geometry: {
+                        type: geom.type,
+                        coordinates: yandexCoords,
+                    },
+                    properties: {
+                        balloonContentHeader: `<strong>${layer.name}</strong>`,
+                        balloonContentBody: balloonBody,
+                        hintContent: name || layer.name,
+                    },
+                    options: isLine || isPolygon ? {
+                        strokeColor: strokeColor,
+                        strokeWidth: strokeWidth,
+                        strokeOpacity: layer.opacity,
+                        fillColor: strokeColor,
+                        fillOpacity: isPolygon ? layer.opacity * 0.35 : 0,
+                    } : {
+                        preset: 'islands#blueCircleDotIcon',
+                        iconColor: strokeColor,
+                    },
+                });
+            });
+
+            return features;
+        }
+
+        function renderMapLayers() {
+            if (!layerObjectManager) {
+                return;
+            }
+            layerObjectManager.removeAll();
+
+            const allFeatures = [];
+            mapLayers.forEach(layer => {
+                if (!activeLayerIds.has(layer.id)) {
+                    return;
+                }
+                allFeatures.push(...geoJsonToYandexFeatures(layer));
+            });
+
+            if (allFeatures.length > 0) {
+                layerObjectManager.add({
+                    type: 'FeatureCollection',
+                    features: allFeatures,
+                });
+            }
+        }
+
+        function toggleMapLayer(layerId, enabled) {
+            if (enabled) {
+                activeLayerIds.add(layerId);
+            } else {
+                activeLayerIds.delete(layerId);
+            }
+            try {
+                localStorage.setItem(
+                    'mapActiveLayers',
+                    JSON.stringify([...activeLayerIds]),
+                );
+            } catch (e) {
+                console.warn('Не удалось сохранить выбор слоёв', e);
+            }
+            renderMapLayers();
+        }
+
+        function populateMapLayersUI() {
+            const container = document.getElementById('mapLayersContainer');
+            if (!container) {
+                return;
+            }
+
+            if (!mapLayers.length) {
+                container.innerHTML = '<div class="checkbox-item"><span style="color:#888; font-size:12px;">Нет активных слоёв</span></div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            mapLayers.forEach(layer => {
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                const checked = activeLayerIds.has(layer.id);
+                item.innerHTML = `
+                    <input type="checkbox" id="layer-${layer.id}" ${checked ? 'checked' : ''}>
+                    <label for="layer-${layer.id}" title="${layer.description || ''}">
+                        ${layer.name} <small style="color:#888;">(${layer.feature_count})</small>
+                    </label>
+                `;
+                const checkbox = item.querySelector('input');
+                checkbox.addEventListener('change', () => {
+                    toggleMapLayer(layer.id, checkbox.checked);
+                });
+                container.appendChild(item);
+            });
+        }
+
+        function loadMapLayers() {
+            fetch('/api/map-layers/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    mapLayers = data || [];
+                    let saved = [];
+                    try {
+                        saved = JSON.parse(localStorage.getItem('mapActiveLayers') || '[]');
+                    } catch (e) {
+                        saved = [];
+                    }
+                    const validIds = new Set(mapLayers.map(l => l.id));
+                    activeLayerIds = new Set(saved.filter(id => validIds.has(id)));
+                    if (!activeLayerIds.size && mapLayers.length) {
+                        mapLayers.forEach(l => activeLayerIds.add(l.id));
+                    }
+                    populateMapLayersUI();
+                    renderMapLayers();
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки слоёв:', error);
+                    const container = document.getElementById('mapLayersContainer');
+                    if (container) {
+                        container.innerHTML = '<div class="checkbox-item"><span style="color:#c66; font-size:12px;">Ошибка загрузки слоёв</span></div>';
+                    }
+                });
+        }
+
+
+
+
+
+        // Обновленная функция загрузки полетов с индикатором обновления
+        function loadFlights() {
+            if (isUpdating) {
+                console.log('Обновление уже выполняется, пропускаем...');
+                return;
+            }
+
+            isUpdating = true;
+            console.log('Начинаем загрузку полетов...');
+
+            // Показываем индикатор обновления
+            showUpdateIndicator(true);
+
+            Promise.allSettled([
+                fetch('/api/flights/').then((response) => {
+                    console.log('Получен ответ от сервера:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                }),
+                loadTelegramReports(),
+            ])
+                .then(([flightsResult]) => {
+                    const data = flightsResult.status === 'fulfilled' ? flightsResult.value : [];
+                    if (flightsResult.status === 'rejected') {
+                        console.error('Ошибка загрузки полётов:', flightsResult.reason);
+                    }
+                    console.log('Получены данные полетов:', data.length);
+                    if (data.length > 0) {
+                        console.log('Первый полет (пример):', data[0]);
+                        console.log('Координаты первого полета:', data[0]?.coordinates_info);
+                        console.log('Координаты первого полета (lat_wgs84, lon_wgs84):', 
+                            data[0]?.coordinates_info?.lat_wgs84, 
+                            data[0]?.coordinates_info?.lon_wgs84);
+                    } else {
+                        console.warn('⚠️ API вернул пустой массив полетов!');
+                    }
+
+                    allFlights = dedupeFlights(data);
+                    const filterState = getMapFilterState();
+                    filteredFlights = allFlights.filter((flight) => flightPassesMapFilters(flight, filterState));
+
+                    console.log('Всего полетов после загрузки:', allFlights.length);
+                    console.log('Отфильтровано полетов:', filteredFlights.length);
+
+                    collectFilterValues();
+                    populateFilterDropdowns();
+                    syncFilteredTelegramReports(filterState);
+                    refreshMapPoints();
+
+
+                    setTimeout(() => {
+                        showUpdateIndicator(false);
+                        isUpdating = false;
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки полетов:', error);
+                    showNotification('Ошибка загрузки данных: ' + error.message, 'error');
+
+                    setTimeout(() => {
+                        showUpdateIndicator(false);
+                        isUpdating = false;
+                    }, 1000);
+                });
+        }
+
+        // Функция для показа/скрытия индикатора обновления
+        function showUpdateIndicator(show) {
+            const indicator = document.getElementById('updateIndicator');
+            if (indicator) {
+                if (show) {
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            }
+        }
+
+
+
+        function mapLoadError() {
+            document.getElementById('loading').innerHTML = 'Ошибка загрузки карты. Проверьте API ключ и подключение.';
+            console.error('Failed to load Yandex Maps API');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadYandexMap);
+        } else {
+            loadYandexMap();
+        }
+
+        // Мобильная адаптация
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+
+            if (mobileFilterToggle && sidebar) {
+                mobileFilterToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                });
+            }
+
+            // Закрытие панели фильтров при применении или сбросе
+            const applyBtn = document.querySelector('.apply-btn');
+            const resetBtn = document.querySelector('.reset-btn');
+
+            if (applyBtn) {
+                applyBtn.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            }
+        });
+
+        // Функция экспорта координат в формат GPX для AlpineQuest
+        function exportToAlpineQuest() {
+            if (!filteredFlights || filteredFlights.length === 0) {
+                alert('Нет отфильтрованных точек для экспорта');
+                return;
+            }
+
+            // Создаем GPX структуру
+            let gpxContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            gpxContent += '<gpx version="1.1" creator="Rubicon Bot" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">\n';
+            gpxContent += '  <metadata>\n';
+            gpxContent += `    <name>Экспорт полетов ${new Date().toISOString().split('T')[0]}</name>\n`;
+            gpxContent += `    <desc>Экспортировано ${filteredFlights.length} точек</desc>\n`;
+            gpxContent += '  </metadata>\n';
+
+            let waypointCount = 0;
+            filteredFlights.forEach((flight, index) => {
+                if (!flight.coordinates_info) {
+                    return;
+                }
+
+                const coord = flight.coordinates_info;
+                const lat = coord.lat_wgs84;
+                const lon = coord.lon_wgs84;
+
+                // Проверяем валидность координат
+                if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
+                    return;
+                }
+
+                // Пропускаем дефолтные координаты
+                if (lat === 90.0 && lon === 0.0) {
+                    return;
+                }
+
+                waypointCount++;
+                
+                // Определяем цвет иконки по результату
+                let symbol = 'Flag, Blue';
+                if (flight.result === 'destroyed') {
+                    symbol = 'Flag, Red';
+                } else if (flight.result === 'defeated') {
+                    symbol = 'Flag, Orange';
+                } else if (flight.result === 'not defeated') {
+                    symbol = 'Flag, Gray';
+                }
+
+                // Формируем описание точки
+                let description = `Полет №${flight.number || 'N/A'}`;
+                if (flight.pilot_name) {
+                    description += `\\nПилот: ${flight.pilot_name}`;
+                }
+                if (flight.target) {
+                    description += `\\nЦель: ${flight.target}`;
+                }
+                if (flight.drone) {
+                    description += `\\nДрон: ${flight.drone}`;
+                }
+                if (flight.flight_date) {
+                    description += `\\nДата: ${flight.flight_date}`;
+                }
+                if (flight.flight_time) {
+                    description += `\\nВремя: ${flight.flight_time}`;
+                }
+                if (flight.result) {
+                    const resultText = {
+                        'destroyed': 'Уничтожено',
+                        'defeated': 'Поражено',
+                        'not defeated': 'Не поражено'
+                    }[flight.result] || flight.result;
+                    description += `\\nРезультат: ${resultText}`;
+                }
+                if (flight.comment) {
+                    description += `\\nКомментарий: ${flight.comment}`;
+                }
+
+                // Добавляем waypoint
+                gpxContent += '  <wpt lat="' + lat + '" lon="' + lon + '">\n';
+                gpxContent += '    <name>Полет ' + (flight.number || index + 1) + '</name>\n';
+                gpxContent += '    <desc><![CDATA[' + description + ']]></desc>\n';
+                gpxContent += '    <sym>' + symbol + '</sym>\n';
+                
+                // Добавляем расширенные данные для AlpineQuest
+                if (flight.coordinates) {
+                    gpxContent += '    <extensions>\n';
+                    gpxContent += '      <coordinates_sk42>' + flight.coordinates + '</coordinates_sk42>\n';
+                    gpxContent += '    </extensions>\n';
+                }
+                
+                gpxContent += '  </wpt>\n';
+            });
+
+            gpxContent += '</gpx>';
+
+            if (waypointCount === 0) {
+                alert('Нет валидных координат для экспорта');
+                return;
+            }
+
+            // Создаем и скачиваем файл
+            const blob = new Blob([gpxContent], { type: 'application/gpx+xml;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `flights_export_${new Date().toISOString().split('T')[0]}.gpx`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            // Показываем уведомление
+            showNotification(`Экспортировано ${waypointCount} точек в формате GPX`, 'success');
+        }
+
+        function getCookie(name) {
+            if (!document.cookie) return null;
+            const prefix = name + '=';
+            for (const part of document.cookie.split(';')) {
+                const cookie = part.trim();
+                if (cookie.startsWith(prefix)) {
+                    return decodeURIComponent(cookie.substring(prefix.length));
+                }
+            }
+            return null;
+        }
+
+        async function fetchSettlementsBatch(points) {
+            const chunkSize = 200;
+            const settlements = [];
+            for (let offset = 0; offset < points.length; offset += chunkSize) {
+                const chunk = points.slice(offset, offset + chunkSize);
+                const response = await fetch('/api/settlements/batch/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || ''
+                    },
+                    body: JSON.stringify({ points: chunk })
+                });
+                if (!response.ok) {
+                    throw new Error('settlement_geocode_failed');
+                }
+                const data = await response.json();
+                settlements.push(...(data.settlements || []));
+            }
+            return settlements;
+        }
+
+        // Функция экспорта координат в формат CSV
+        async function exportToCSV() {
+            if (!filteredFlights || filteredFlights.length === 0) {
+                showNotification('Нет отфильтрованных точек для экспорта', 'warning');
+                return;
+            }
+
+            const escapeCSV = (value) => {
+                if (value === null || value === undefined) return '';
+                const str = String(value);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return '"' + str.replace(/"/g, '""') + '"';
+                }
+                return str;
+            };
+
+            const resultTextMap = {
+                'destroyed': 'Уничтожено',
+                'defeated': 'Поражено',
+                'not defeated': 'Не поражено'
+            };
+
+            const exportRows = [];
+            const geocodePoints = [];
+
+            filteredFlights.forEach((flight) => {
+                if (!flight.coordinates_info) {
+                    return;
+                }
+                const coord = flight.coordinates_info;
+                const lat = coord.lat_wgs84;
+                const lon = coord.lon_wgs84;
+                if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
+                    return;
+                }
+                if (lat === 90.0 && lon === 0.0) {
+                    return;
+                }
+                exportRows.push({ flight, lat, lon });
+                geocodePoints.push({ lat, lon });
+            });
+
+            if (exportRows.length === 0) {
+                showNotification('Нет валидных координат для экспорта', 'warning');
+                return;
+            }
+
+            showNotification('Определяем ближайшие населённые пункты…', 'info');
+
+            let settlements;
+            try {
+                settlements = await fetchSettlementsBatch(geocodePoints);
+            } catch (err) {
+                console.error(err);
+                showNotification('Не удалось определить населённые пункты. Повторите позже.', 'warning');
+                return;
+            }
+
+            let csvContent = '\uFEFF';
+            csvContent += 'Номер вылета,Пилот,Дрон,Дата,Время,Тип цели,Результат,Координаты СК-42,Ближайший НП,Комментарий\n';
+
+            exportRows.forEach((row, index) => {
+                const flight = row.flight;
+                const resultText = resultTextMap[flight.result] || flight.result || '';
+                const settlement = settlements[index] || '—';
+
+                csvContent += [
+                    escapeCSV(flight.number || ''),
+                    escapeCSV(flight.pilot_name || ''),
+                    escapeCSV(flight.drone || ''),
+                    escapeCSV(flight.flight_date || ''),
+                    escapeCSV(flight.flight_time || ''),
+                    escapeCSV(flight.target || ''),
+                    escapeCSV(resultText),
+                    escapeCSV(flight.coordinates || ''),
+                    escapeCSV(settlement),
+                    escapeCSV(flight.comment || '')
+                ].join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute('download', `flights_export_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showNotification(`Экспортировано ${exportRows.length} точек в CSV файл`, 'success');
+        }
+
+        // Функция экспорта координат в формат KML для Google Earth
+        function exportToKML() {
+            if (!filteredFlights || filteredFlights.length === 0) {
+                showNotification('Нет отфильтрованных точек для экспорта', 'warning');
+                return;
+            }
+
+            // Создаем KML структуру
+            let kmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            kmlContent += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+            kmlContent += '  <Document>\n';
+            kmlContent += `    <name>Экспорт полетов ${new Date().toISOString().split('T')[0]}</name>\n`;
+            kmlContent += `    <description>Экспортировано ${filteredFlights.length} точек</description>\n`;
+
+            // Стили для разных результатов
+            kmlContent += '    <Style id="destroyed">\n';
+            kmlContent += '      <IconStyle>\n';
+            kmlContent += '        <color>ff0000ff</color>\n';
+            kmlContent += '        <scale>1.2</scale>\n';
+            kmlContent += '        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>\n';
+            kmlContent += '      </IconStyle>\n';
+            kmlContent += '    </Style>\n';
+
+            kmlContent += '    <Style id="defeated">\n';
+            kmlContent += '      <IconStyle>\n';
+            kmlContent += '        <color>ff0099ff</color>\n';
+            kmlContent += '        <scale>1.1</scale>\n';
+            kmlContent += '        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>\n';
+            kmlContent += '      </IconStyle>\n';
+            kmlContent += '    </Style>\n';
+
+            kmlContent += '    <Style id="not_defeated">\n';
+            kmlContent += '      <IconStyle>\n';
+            kmlContent += '        <color>ff808080</color>\n';
+            kmlContent += '        <scale>1.0</scale>\n';
+            kmlContent += '        <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>\n';
+            kmlContent += '      </IconStyle>\n';
+            kmlContent += '    </Style>\n';
+
+            let placemarkCount = 0;
+            filteredFlights.forEach((flight, index) => {
+                if (!flight.coordinates_info) {
+                    return;
+                }
+
+                const coord = flight.coordinates_info;
+                const lat = coord.lat_wgs84;
+                const lon = coord.lon_wgs84;
+
+                // Проверяем валидность координат
+                if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
+                    return;
+                }
+
+                // Пропускаем дефолтные координаты
+                if (lat === 90.0 && lon === 0.0) {
+                    return;
+                }
+
+                placemarkCount++;
+
+                // Определяем стиль по результату
+                let styleUrl = '#not_defeated';
+                if (flight.result === 'destroyed') {
+                    styleUrl = '#destroyed';
+                } else if (flight.result === 'defeated') {
+                    styleUrl = '#defeated';
+                }
+
+                // Формируем описание
+                let description = '<![CDATA[<table border="1" cellpadding="3" cellspacing="0" style="font-family: Arial; font-size: 12px;">';
+                description += `<tr><td><b>Номер вылета:</b></td><td>${flight.number || 'N/A'}</td></tr>`;
+                if (flight.pilot_name) {
+                    description += `<tr><td><b>Пилот:</b></td><td>${flight.pilot_name}</td></tr>`;
+                }
+                if (flight.drone) {
+                    description += `<tr><td><b>Дрон:</b></td><td>${flight.drone}</td></tr>`;
+                }
+                if (flight.flight_date) {
+                    description += `<tr><td><b>Дата:</b></td><td>${flight.flight_date}</td></tr>`;
+                }
+                if (flight.flight_time) {
+                    description += `<tr><td><b>Время:</b></td><td>${flight.flight_time}</td></tr>`;
+                }
+                if (flight.target) {
+                    description += `<tr><td><b>Тип цели:</b></td><td>${flight.target}</td></tr>`;
+                }
+                if (flight.result) {
+                    const resultText = {
+                        'destroyed': 'Уничтожено',
+                        'defeated': 'Поражено',
+                        'not defeated': 'Не поражено'
+                    }[flight.result] || flight.result;
+                    description += `<tr><td><b>Результат:</b></td><td>${resultText}</td></tr>`;
+                }
+                if (flight.coordinates) {
+                    description += `<tr><td><b>Координаты СК-42:</b></td><td>${flight.coordinates}</td></tr>`;
+                }
+                if (flight.comment) {
+                    description += `<tr><td><b>Комментарий:</b></td><td>${flight.comment}</td></tr>`;
+                }
+                description += '</table>]]>';
+
+                // Добавляем Placemark
+                kmlContent += '    <Placemark>\n';
+                kmlContent += `      <name>Полет ${flight.number || index + 1}</name>\n`;
+                kmlContent += `      <description>${description}</description>\n`;
+                kmlContent += `      <styleUrl>${styleUrl}</styleUrl>\n`;
+                kmlContent += '      <Point>\n';
+                kmlContent += `        <coordinates>${lon},${lat},0</coordinates>\n`;
+                kmlContent += '      </Point>\n';
+                kmlContent += '    </Placemark>\n';
+            });
+
+            kmlContent += '  </Document>\n';
+            kmlContent += '</kml>';
+
+            if (placemarkCount === 0) {
+                showNotification('Нет валидных координат для экспорта', 'warning');
+                return;
+            }
+
+            // Создаем и скачиваем файл
+            const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            link.setAttribute('download', `flights_export_${dateStr}.kml`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showNotification(`Экспортировано ${placemarkCount} точек в KML файл`, 'success');
+        }
+
+        // Закрытие sidebar при изменении размера экрана
+        window.addEventListener('resize', function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (window.innerWidth > 768 && sidebar) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        window.MAP_JS_VERSION = '2026-06-06-v8';
+        window.applyFilters = applyFilters;
+        window.resetFilters = resetFilters;
+        window.showTodayFlights = showTodayFlights;
+        console.log('Карта: версия JS', window.MAP_JS_VERSION);
+    </script>
+    <script src="{% static 'js/tv-mode.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+===========================================
+COMMAND TO GET SSL CERTIFICATES
+===========================================
+
+Open PowerShell or Command Prompt in this directory and run:
+
+docker run -it --rm -v "%CD%/certbot/conf:/etc/letsencrypt" certbot/certbot certonly --manual --preferred-challenges dns --email adminsito@mail.ru --agree-tos --no-eff-email -d aeroflot-pvz.ru -d www.aeroflot-pvz.ru
+
+===========================================
+WHAT WILL HAPPEN:
+===========================================
+
+1. Certbot will show TWO TXT records to add to DNS:
+   - _acme-challenge.aeroflot-pvz.ru
+   - _acme-challenge.www.aeroflot-pvz.ru
+
+2. Add these TXT records in your DNS provider panel
+
+3. Wait 1-5 minutes for DNS propagation
+
+4. Press Enter in terminal - certbot will verify and issue certificates
+
+===========================================
+AFTER SUCCESS:
+===========================================
+
+1. Enable HTTPS redirect in nginx/conf.d/default.conf
+2. Restart: docker-compose restart webserver  
+3. Test: curl -I https://aeroflot-pvz.ru
+
+===========================================
