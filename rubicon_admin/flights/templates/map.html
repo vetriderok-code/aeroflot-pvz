@@ -645,6 +645,15 @@
                     </select>
                 </div>
 
+                <div class="filter-section">
+                    <label>Результат:</label>
+                    <select id="resultFilter" onchange="applyFilters()">
+                        <option value="">Поражено и уничтожено</option>
+                        <option value="defeated">Поражено</option>
+                        <option value="destroyed">Уничтожено</option>
+                    </select>
+                </div>
+
                 <div class="filter-section" data-filter-id="target">
                     <div class="filter-section-header">
                         <label>Тип цели:</label>
@@ -662,20 +671,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!--<div class="filter-section">
-                    <label>Результат:</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="missCheckbox" value="промах" checked>
-                            <label for="missCheckbox">Промах</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="hitCheckbox" value="попадание" checked>
-                            <label for="hitCheckbox">Попадание</label>
-                        </div>
-                    </div>
-                </div>-->
 
                 <div class="filter-section">
                     <label>Поиск по координатам:</label>
@@ -1189,6 +1184,7 @@
             const coordinatesSearch = document.getElementById('coordinatesSearch')?.value.trim() || '';
             const dateFrom = document.getElementById('dateFrom')?.value || '';
             const dateTo = document.getElementById('dateTo')?.value || '';
+            const resultFilter = document.getElementById('resultFilter')?.value || '';
 
             return {
                 pilotFilter,
@@ -1198,12 +1194,16 @@
                 searchCoords: parseCoordinatesSearch(coordinatesSearch),
                 dateFrom,
                 dateTo,
+                resultFilter,
                 withVideoOnly: isWithVideoFilterActive(),
             };
         }
 
         function flightPassesMapFilters(flight, filterState) {
             if (filterState.pilotFilter && flight.pilot_name !== filterState.pilotFilter) {
+                return false;
+            }
+            if (filterState.resultFilter && flight.result !== filterState.resultFilter) {
                 return false;
             }
             if (filterState.isTargetFilterActive && !filterState.selectedTargets.includes(flight.target)) {
@@ -1245,6 +1245,9 @@
 
         function reportPassesMapFilters(report, filterState) {
             if (filterState.withVideoOnly && !report.has_video) {
+                return false;
+            }
+            if (filterState.resultFilter && report.result !== filterState.resultFilter) {
                 return false;
             }
             return passesDateFilter(
@@ -1825,6 +1828,10 @@
 
         function resetFilters() {
             document.getElementById('pilotFilter').value = '';
+            const resultFilterEl = document.getElementById('resultFilter');
+            if (resultFilterEl) {
+                resultFilterEl.value = '';
+            }
             document.querySelectorAll('.target-checkbox').forEach(cb => cb.checked = true);
             document.getElementById('targetCheckboxAll').checked = true;
             document.getElementById('targetCheckboxAll').indeterminate = false;
@@ -1837,11 +1844,7 @@
                 withVideoFilter.checked = false;
             }
 
-            filteredFlights = [...allFlights];
-            loadTelegramReports().finally(() => {
-                syncFilteredTelegramReports(getMapFilterState());
-                refreshMapPoints();
-            });
+            applyFilters();
         }
 
         function formatDate(dateString) {

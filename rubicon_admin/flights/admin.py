@@ -2876,22 +2876,22 @@ class FlightAdmin(admin.ModelAdmin):
                     CorrectiveType.objects.all().delete()
                     DirectionType.objects.all().delete()
                     ImportProgress.objects.all().delete()
-                    
-                    self.message_user(
-                        request,
-                        _(f"✅ База данных очищена! Удалено:\n"
-                          f"• Вылеты: {flights_count}\n"
-                          f"• Пилоты: {pilots_count}\n"
-                          f"• Дроны: {drones_count}\n"
-                          f"• Виды БП: {explosive_types_count}\n"
-                          f"• Виды взрывателя: {explosive_devices_count}\n"
-                          f"• Типы целей: {target_types_count}\n"
-                          f"• Типы корректировок: {corrective_types_count}\n"
-                          f"• Типы направлений: {direction_types_count}\n"
-                          f"• Прогресс импорта: {import_progress_count}"),
-                        level=messages.SUCCESS
-                    )
-                    logger.info(f"База данных очищена пользователем {request.user.username}")
+
+                self.message_user(
+                    request,
+                    _(f"✅ База данных очищена! Удалено:\n"
+                      f"• Вылеты: {flights_count}\n"
+                      f"• Пилоты: {pilots_count}\n"
+                      f"• Дроны: {drones_count}\n"
+                      f"• Виды БП: {explosive_types_count}\n"
+                      f"• Виды взрывателя: {explosive_devices_count}\n"
+                      f"• Типы целей: {target_types_count}\n"
+                      f"• Типы корректировок: {corrective_types_count}\n"
+                      f"• Типы направлений: {direction_types_count}\n"
+                      f"• Прогресс импорта: {import_progress_count}"),
+                    level=messages.SUCCESS
+                )
+                logger.info(f"База данных очищена пользователем {request.user.username}")
             except Exception as e:
                 logger.error(f"Ошибка при очистке базы данных: {e}", exc_info=True)
                 self.message_user(
