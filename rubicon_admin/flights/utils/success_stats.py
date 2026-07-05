@@ -32,6 +32,16 @@ def success_total(counts):
     return counts.get('destroyed', 0) + counts.get('porazheno', 0)
 
 
+def filter_flights_by_result_param(qs, result_param):
+    """Фильтр вылетов по ?result= (как на карте: defeated / destroyed / оба успешных)."""
+    result_param = (result_param or '').strip().lower()
+    if result_param == 'destroyed':
+        return qs.filter(result=FlightResultTypes.DESTROYED)
+    if result_param == 'defeated':
+        return qs.filter(result=FlightResultTypes.DEFEATED)
+    return qs.filter(result__in=(FlightResultTypes.DESTROYED, FlightResultTypes.DEFEATED))
+
+
 def aggregate_success_counts(flights_qs):
     counts = empty_success_counts()
     for result in flights_qs.values_list('result', flat=True).iterator():

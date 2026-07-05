@@ -6,6 +6,7 @@ from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from datetime import timedelta, date
 from flights.models import Flight, FlightResultTypes, TargetType
+from flights.utils.success_stats import filter_flights_by_result_param
 import logging
 import math
 from collections import defaultdict
@@ -40,12 +41,12 @@ class TargetRatingView(APIView):
                 start_of_week = today - timedelta(days=days_since_monday)
                 start_of_month = today.replace(day=1)
 
-            # Получаем только УНИЧТОЖЕННЫЕ цели (destroyed) с пилотами
+            result_filter = request.GET.get('result', '')
+
             logger.info("Начинаем агрегацию данных по целям и пилотам...")
             
-            # Получаем все полеты с уничтоженными целями
-            all_destroyed_flights = Flight.objects.filter(
-                result=FlightResultTypes.DESTROYED
+            all_destroyed_flights = filter_flights_by_result_param(
+                Flight.objects.all(), result_filter,
             ).exclude(
                 target__isnull=True
             ).exclude(

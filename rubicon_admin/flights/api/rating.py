@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta, date
 from flights.models import Pilot, Flight, FlightResultTypes, TargetType
+from flights.utils.success_stats import filter_flights_by_result_param
 import logging
 import math
 
@@ -40,6 +41,8 @@ class PilotRatingView(APIView):
                 start_of_week = today - timedelta(days=days_since_monday)
                 start_of_month = today.replace(day=1)
 
+            result_filter = request.GET.get('result', '')
+
             # Исключаем пилотов с именем, начинающимся с "Неизвестный_"
             pilots = Pilot.objects.exclude(callname__istartswith='Неизвестный_')
             result = []
@@ -49,7 +52,9 @@ class PilotRatingView(APIView):
             
             for pilot in pilots:
                 try:
-                    all_flights = pilot.flights.all()
+                    all_flights = filter_flights_by_result_param(
+                        pilot.flights.all(), result_filter,
+                    )
                     weekly_flights = all_flights.filter(flight_date__gte=start_of_week)
                     monthly_flights = all_flights.filter(flight_date__gte=start_of_month)
                     

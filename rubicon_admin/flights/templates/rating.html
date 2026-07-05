@@ -274,6 +274,19 @@
             background: rgba(255, 255, 255, 0.2);
             transform: scale(1.05);
         }
+        .result-filter {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            min-width: 220px;
+            cursor: pointer;
+        }
+        .result-filter option {
+            background: #1a1a2e;
+            color: white;
+        }
         /* Tabs styling */
         .nav-tabs {
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -462,6 +475,11 @@
                 <button class="refresh-btn" id="refresh-btn">
                     <i class="fas fa-sync-alt"></i> Обновить данные
                 </button>
+                <select id="resultFilter" class="result-filter" title="Фильтр по результату вылета">
+                    <option value="">Поражено и уничтожено</option>
+                    <option value="defeated">Поражено</option>
+                    <option value="destroyed">Уничтожено</option>
+                </select>
                 <div class="search-container" style="position: relative;">
                     <input type="text" id="pilot-search" class="form-control" 
                            placeholder="Поиск пилота..." 
@@ -726,6 +744,19 @@
             month: null,
             total: null
         };
+
+        function getResultFilterValue() {
+            return document.getElementById('resultFilter')?.value || '';
+        }
+
+        function buildRatingApiUrl(basePath) {
+            const result = getResultFilterValue();
+            if (!result) {
+                return basePath;
+            }
+            const separator = basePath.includes('?') ? '&' : '?';
+            return `${basePath}${separator}result=${encodeURIComponent(result)}`;
+        }
         
         // Функция для фильтрации данных по поисковому запросу
         function filterPilotsBySearch(data, searchQuery) {
@@ -761,7 +792,7 @@
                 currentPeriodData.month.start_date = startOfMonth.toISOString().split('T')[0];
                 currentPeriodData.total.start_date = null; // Все время - без даты
                 // Загружаем данные с API
-                const response = await fetch('/api/rating/');
+                const response = await fetch(buildRatingApiUrl('/api/rating/'));
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -929,7 +960,7 @@
             modal.show();
             try {
                 // Получаем информацию о пилоте из текущих данных
-                const response = await fetch('/api/rating/');
+                const response = await fetch(buildRatingApiUrl('/api/rating/'));
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -962,12 +993,21 @@
                 if (startDate) {
                     url += '&date_from=' + startDate;
                 }
+                const resultFilter = getResultFilterValue();
+                if (resultFilter) {
+                    url += '&result=' + encodeURIComponent(resultFilter);
+                }
                 // Загружаем данные о вылетах
                 const flightsResponse = await fetch(url);
                 if (!flightsResponse.ok) {
                     throw new Error(`HTTP error! status: ${flightsResponse.status}`);
                 }
-                const flightsData = await flightsResponse.json();
+                let flightsData = await flightsResponse.json();
+                if (!resultFilter && Array.isArray(flightsData)) {
+                    flightsData = flightsData.filter(
+                        (f) => f.result === 'destroyed' || f.result === 'defeated',
+                    );
+                }
                 // Очищаем таблицу
                 flightDetailsBody.innerHTML = '';
                 if (!flightsData || flightsData.length === 0) {
@@ -1128,7 +1168,7 @@
             console.log('Функция loadTargetRatingData вызвана!');
             try {
                 console.log('Делаем запрос к /api/target_rating/...');
-                const response = await fetch('/api/target_rating/');
+                const response = await fetch(buildRatingApiUrl('/api/target_rating/'));
                 console.log('Ответ получен, статус:', response.status, response.statusText);
                 
                 if (response.status === 404) {
@@ -1333,6 +1373,13 @@
                             });
                         }
                     }, 300); // Задержка 300мс для оптимизации
+                });
+            }
+
+            const resultFilterEl = document.getElementById('resultFilter');
+            if (resultFilterEl) {
+                resultFilterEl.addEventListener('change', function() {
+                    loadRatingData();
                 });
             }
 
