@@ -42,6 +42,22 @@ def filter_flights_by_result_param(qs, result_param):
     return qs.filter(result__in=(FlightResultTypes.DESTROYED, FlightResultTypes.DEFEATED))
 
 
+def filter_flights_by_result_list(qs, result_values):
+    """Фильтр по списку result= (destroyed / defeated). Пустой список — без фильтра."""
+    allowed = {
+        'destroyed': FlightResultTypes.DESTROYED,
+        'defeated': FlightResultTypes.DEFEATED,
+    }
+    selected = []
+    for raw in result_values or []:
+        key = (raw or '').strip().lower()
+        if key in allowed and allowed[key] not in selected:
+            selected.append(allowed[key])
+    if not selected:
+        return qs
+    return qs.filter(result__in=selected)
+
+
 def aggregate_success_counts(flights_qs):
     counts = empty_success_counts()
     for result in flights_qs.values_list('result', flat=True).iterator():
