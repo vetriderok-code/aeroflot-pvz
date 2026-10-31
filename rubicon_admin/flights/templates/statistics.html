@@ -75,6 +75,25 @@
             color: #fff;
             font-size: 14px;
         }
+        .result-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 18px;
+            margin-top: 6px;
+        }
+        .result-checkboxes label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: normal;
+            cursor: pointer;
+            margin: 0;
+        }
+        .result-checkboxes input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
         .filter-group input:focus, .filter-group select:focus {
             outline: none;
             border-color: #bb86fc;
@@ -644,6 +663,29 @@
                         <!-- Опции будут заполнены динамически -->
                     </select>
                 </div>
+                <div class="filter-group">
+                    <label for="targetFilter">🎯 Тип цели:</label>
+                    <select id="targetFilter">
+                        <option value="">Все цели</option>
+                        <!-- Опции будут заполнены динамически -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Степень поражения:</span>
+                    <div class="result-checkboxes" role="group" aria-label="Степень поражения">
+                        <label>
+                            <input type="checkbox" id="resultDefeated" value="defeated" checked>
+                            Поражено
+                        </label>
+                        <label>
+                            <input type="checkbox" id="resultDestroyed" value="destroyed" checked>
+                            Уничтожено
+                        </label>
+                    </div>
+                    <small style="color: #888; display: block; margin-top: 4px;">
+                        Снимите обе галочки, чтобы учитывать все результаты, включая «не поражено».
+                    </small>
+                </div>
             </div>
             <div class="filter-actions">
                 <button class="btn btn-secondary" id="resetFiltersBtn">↺ Сбросить</button>
@@ -809,18 +851,46 @@
         let heatmapMap = null;
         let heatmapLayer = null;
         
+        function collectResultFilterValues() {
+            const results = [];
+            if (document.getElementById('resultDefeated').checked) {
+                results.push('defeated');
+            }
+            if (document.getElementById('resultDestroyed').checked) {
+                results.push('destroyed');
+            }
+            return results;
+        }
+
+        function buildStatisticsQueryParams(filters = {}) {
+            const params = new URLSearchParams();
+            params.set('_', String(Date.now()));
+            if (filters.date_from) {
+                params.set('date_from', filters.date_from);
+            }
+            if (filters.date_to) {
+                params.set('date_to', filters.date_to);
+            }
+            if (filters.pilot_callname) {
+                params.set('pilot_callname', filters.pilot_callname);
+            }
+            if (filters.drone_type) {
+                params.set('drone_type', filters.drone_type);
+            }
+            if (filters.target) {
+                params.set('target', filters.target);
+            }
+            (filters.results || []).forEach((value) => params.append('result', value));
+            return params;
+        }
+
         // Функция для получения данных статистики
         async function fetchStatistics(filters = {}) {
             showLoading(true);
             try {
                 const url = new URL('/api/statistics/', window.location.origin);
-                url.searchParams.set('_', String(Date.now()));
-                // Добавляем параметры фильтрации
-                Object.keys(filters).forEach(key => {
-                    if (filters[key]) {
-                        url.searchParams.append(key, filters[key]);
-                    }
-                });
+                const params = buildStatisticsQueryParams(filters);
+                url.search = params.toString();
                 console.log('Запрос к API:', url.toString());
                 const response = await fetch(url.toString());
                 if (!response.ok) {
@@ -880,12 +950,18 @@
                 const rawDroneTypes = flightsData.map(f => f.drone).filter(Boolean);
                 const normalizedDroneTypes = rawDroneTypes.map(d => normalizeDroneForDisplay(d));
                 const droneTypes = [...new Set(normalizedDroneTypes)].sort();
+                const targetTypes = [...new Set(
+                    flightsData.map(f => f.target).filter(Boolean)
+                )].sort((a, b) => a.localeCompare(b, 'ru'));
                 // Заполняем выпадающие списки
                 const pilotSelect = document.getElementById('pilotFilter');
                 const droneSelect = document.getElementById('droneFilter');
+                const targetSelect = document.getElementById('targetFilter');
+                const savedTarget = targetSelect.value;
                 // Очищаем существующие опции
                 pilotSelect.innerHTML = '<option value="">Все пилоты</option>';
                 droneSelect.innerHTML = '<option value="">Все типы</option>';
+                targetSelect.innerHTML = '<option value="">Все цели</option>';
                 // Добавляем пилотов
                 pilots.forEach(pilot => {
                     const option = document.createElement('option');
@@ -900,6 +976,15 @@
                     option.textContent = drone;
                     droneSelect.appendChild(option);
                 });
+                targetTypes.forEach(targetName => {
+                    const option = document.createElement('option');
+                    option.value = targetName;
+                    option.textContent = targetName;
+                    targetSelect.appendChild(option);
+                });
+                if (savedTarget && targetTypes.includes(savedTarget)) {
+                    targetSelect.value = savedTarget;
+                }
             } catch (error) {
                 console.error('Ошибка при получении данных для фильтров:', error);
             }
@@ -997,7 +1082,7 @@
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
-            fetchStatistics();
+            fetchStatistics(getStatisticsFiltersFromForm());
             fetchFiltersData();
             // Инициализируем тепловую карту
             initHeatmapMap();
@@ -1686,13 +1771,19 @@
             }
         }
         // Функция для применения фильтров
-        function applyFilters() {
-            const filters = {
+        function getStatisticsFiltersFromForm() {
+            return {
                 date_from: document.getElementById('dateFrom').value,
                 date_to: document.getElementById('dateTo').value,
                 pilot_callname: document.getElementById('pilotFilter').value,
-                drone_type: document.getElementById('droneFilter').value
+                drone_type: document.getElementById('droneFilter').value,
+                target: document.getElementById('targetFilter').value,
+                results: collectResultFilterValues(),
             };
+        }
+
+        function applyFilters() {
+            const filters = getStatisticsFiltersFromForm();
             console.log('Применяем фильтры:', filters);
             fetchStatistics(filters);
         }
@@ -1702,8 +1793,11 @@
             document.getElementById('dateTo').value = '';
             document.getElementById('pilotFilter').value = '';
             document.getElementById('droneFilter').value = '';
+            document.getElementById('targetFilter').value = '';
+            document.getElementById('resultDefeated').checked = true;
+            document.getElementById('resultDestroyed').checked = true;
             console.log('Фильтры сброшены');
-            fetchStatistics(); // Загружаем все данные без фильтров
+            fetchStatistics(getStatisticsFiltersFromForm());
         }
         // Функция для установки периода "Сегодня"
         function setTodayPeriod() {
@@ -1719,7 +1813,7 @@
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
-            fetchStatistics();
+            fetchStatistics(getStatisticsFiltersFromForm());
             fetchFiltersData();
             // Добавляем кнопку "Сегодня" для удобства
             const todayBtn = document.createElement('button');
