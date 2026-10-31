@@ -1234,7 +1234,10 @@ class FlightAdmin(admin.ModelAdmin):
         from flights.utils.excel_import_source import UploadedExcelSource
 
         sources = import_sources or [UploadedExcelSource(f) for f in xlsx_files]
-        incremental_import = getattr(request, 'incremental_import', False)
+        if import_sources:
+            incremental_import = bool(getattr(request, 'incremental_import', False))
+        else:
+            incremental_import = bool(request.POST.get('incremental_import'))
 
         # Ручная загрузка: при новом импорте очищаем вылеты.
         # Автоимпорт с шары: сохраняем вылеты, дозагружаем новые строки.

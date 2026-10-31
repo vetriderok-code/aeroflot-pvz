@@ -21,6 +21,13 @@
         <label for="xlsx_file">{% trans 'Файл .xlsx или .xlsm:' %}</label>
         <input type="file" name="xlsx_files" id="xlsx_files" accept=".xlsx,.xlsm" required multiple>
         <br><br>
+        <label style="display: block; margin-bottom: 12px;">
+            <input type="checkbox" name="incremental_import" value="1" checked>
+            {% trans 'Добавить к существующим (инкрементальный импорт)' %}
+        </label>
+        <p style="margin: 0 0 12px; font-size: 13px; color: #666;">
+            {% trans 'Включено: вылеты в базе сохраняются, загружаются новые строки из файла(ов); дубликаты пропускаются. Можно выбрать несколько файлов — данные объединятся. Снимите галочку только для полной перезагрузки: перед импортом все вылеты будут удалены.' %}
+        </p>
         <input type="submit" value="{% trans 'Импортировать' %}">
     </form>
     <p><small>{% trans 'Файл должен содержать данные о вылетах на листе "SVODNAYA" (или втором листе), начиная со строки с заголовками (например, "Время", "Номер вылета" и т.д.). Время до 06:30 будет отнесено к следующему дню. Поддерживаются файлы с макросами (.xlsm).' %}</small></p>
