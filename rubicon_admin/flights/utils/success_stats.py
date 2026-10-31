@@ -43,10 +43,12 @@ def filter_flights_by_result_param(qs, result_param):
 
 
 def filter_flights_by_result_list(qs, result_values):
-    """Фильтр по списку result= (destroyed / defeated). Пустой список — без фильтра."""
+    """Фильтр по списку result= (destroyed / defeated / not_defeated). Пустой список — без фильтра."""
     allowed = {
         'destroyed': FlightResultTypes.DESTROYED,
         'defeated': FlightResultTypes.DEFEATED,
+        'not_defeated': FlightResultTypes.NOT_DEFEATED,
+        'not defeated': FlightResultTypes.NOT_DEFEATED,
     }
     selected = []
     for raw in result_values or []:

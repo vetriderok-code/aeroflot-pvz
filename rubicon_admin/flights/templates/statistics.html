@@ -61,11 +61,15 @@
             display: flex;
             flex-direction: column;
         }
-        .filter-group label {
+        .filter-group > label,
+        .filter-group > .filter-label {
             margin-bottom: 8px;
             font-weight: 500;
             color: #ccc;
             font-size: 14px;
+        }
+        .filter-group--results {
+            grid-column: 1 / -1;
         }
         .filter-group input, .filter-group select {
             padding: 10px;
@@ -77,22 +81,64 @@
         }
         .result-checkboxes {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px 18px;
-            margin-top: 6px;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 20px 28px;
         }
         .result-checkboxes label {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             font-weight: normal;
+            font-size: 14px;
+            color: #e0e0e0;
             cursor: pointer;
             margin: 0;
+            white-space: nowrap;
         }
         .result-checkboxes input[type="checkbox"] {
             width: auto;
             margin: 0;
             cursor: pointer;
+        }
+        .filter-group--targets {
+            grid-column: 1 / -1;
+        }
+        .target-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 20px;
+            max-height: 140px;
+            overflow-y: auto;
+            padding: 10px 12px;
+            margin-top: 4px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #252525;
+        }
+        .target-checkboxes label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: normal;
+            font-size: 13px;
+            color: #e0e0e0;
+            cursor: pointer;
+            margin: 0;
+            max-width: 100%;
+        }
+        .target-checkboxes input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .target-filter-hint {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #888;
         }
         .filter-group input:focus, .filter-group select:focus {
             outline: none;
@@ -564,8 +610,13 @@
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
-            .filter-group label {
+            .filter-group > label,
+            .filter-group > .filter-label {
                 font-size: 13px;
+            }
+            .result-checkboxes {
+                flex-wrap: wrap;
+                gap: 12px 16px;
             }
             .filter-group input, .filter-group select {
                 padding: 8px;
@@ -663,14 +714,14 @@
                         <!-- Опции будут заполнены динамически -->
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="targetFilter">🎯 Тип цели:</label>
-                    <select id="targetFilter">
-                        <option value="">Все цели</option>
-                        <!-- Опции будут заполнены динамически -->
-                    </select>
+                <div class="filter-group filter-group--targets">
+                    <span class="filter-label">🎯 Тип цели:</span>
+                    <div id="targetFilterList" class="target-checkboxes" role="group" aria-label="Тип цели">
+                        <!-- Галочки заполняются из вылетов -->
+                    </div>
+                    <p class="target-filter-hint">Ничего не отмечено — учитываются все типы целей.</p>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group filter-group--results">
                     <span class="filter-label">Степень поражения:</span>
                     <div class="result-checkboxes" role="group" aria-label="Степень поражения">
                         <label>
@@ -681,10 +732,11 @@
                             <input type="checkbox" id="resultDestroyed" value="destroyed" checked>
                             Уничтожено
                         </label>
+                        <label>
+                            <input type="checkbox" id="resultNotDefeated" value="not_defeated">
+                            Не поражено
+                        </label>
                     </div>
-                    <small style="color: #888; display: block; margin-top: 4px;">
-                        Снимите обе галочки, чтобы учитывать все результаты, включая «не поражено».
-                    </small>
                 </div>
             </div>
             <div class="filter-actions">
@@ -851,6 +903,12 @@
         let heatmapMap = null;
         let heatmapLayer = null;
         
+        const RESULT_FILTER_CHECKBOX_IDS = [
+            'resultDefeated',
+            'resultDestroyed',
+            'resultNotDefeated',
+        ];
+
         function collectResultFilterValues() {
             const results = [];
             if (document.getElementById('resultDefeated').checked) {
@@ -859,7 +917,70 @@
             if (document.getElementById('resultDestroyed').checked) {
                 results.push('destroyed');
             }
+            if (document.getElementById('resultNotDefeated').checked) {
+                results.push('not_defeated');
+            }
             return results;
+        }
+
+        function countResultFiltersChecked() {
+            return RESULT_FILTER_CHECKBOX_IDS.filter(
+                (id) => document.getElementById(id).checked
+            ).length;
+        }
+
+        function validateResultFilters() {
+            if (collectResultFilterValues().length > 0) {
+                return true;
+            }
+            alert('Выберите хотя бы один результат: поражено, уничтожено или не поражено.');
+            return false;
+        }
+
+        function collectTargetFilterValues() {
+            return Array.from(
+                document.querySelectorAll('#targetFilterList input[type="checkbox"]:checked')
+            ).map((input) => input.value);
+        }
+
+        function renderTargetFilterCheckboxes(targetTypes, selectedTargets) {
+            const container = document.getElementById('targetFilterList');
+            if (!container) {
+                return;
+            }
+            const selected = new Set(selectedTargets || []);
+            container.innerHTML = '';
+            if (!targetTypes.length) {
+                container.innerHTML = '<span style="color:#888;font-size:13px;">Нет данных о целях</span>';
+                return;
+            }
+            targetTypes.forEach((targetName) => {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'target_filter';
+                input.value = targetName;
+                input.checked = selected.has(targetName);
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(targetName));
+                container.appendChild(label);
+            });
+        }
+
+        function initResultFilterCheckboxes() {
+            RESULT_FILTER_CHECKBOX_IDS.forEach((id) => {
+                const input = document.getElementById(id);
+                if (!input || input.dataset.resultGuard === '1') {
+                    return;
+                }
+                input.dataset.resultGuard = '1';
+                input.addEventListener('change', function () {
+                    if (countResultFiltersChecked() > 0) {
+                        return;
+                    }
+                    this.checked = true;
+                });
+            });
         }
 
         function buildStatisticsQueryParams(filters = {}) {
@@ -877,9 +998,7 @@
             if (filters.drone_type) {
                 params.set('drone_type', filters.drone_type);
             }
-            if (filters.target) {
-                params.set('target', filters.target);
-            }
+            (filters.targets || []).forEach((value) => params.append('target', value));
             (filters.results || []).forEach((value) => params.append('result', value));
             return params;
         }
@@ -956,12 +1075,10 @@
                 // Заполняем выпадающие списки
                 const pilotSelect = document.getElementById('pilotFilter');
                 const droneSelect = document.getElementById('droneFilter');
-                const targetSelect = document.getElementById('targetFilter');
-                const savedTarget = targetSelect.value;
+                const savedTargets = collectTargetFilterValues();
                 // Очищаем существующие опции
                 pilotSelect.innerHTML = '<option value="">Все пилоты</option>';
                 droneSelect.innerHTML = '<option value="">Все типы</option>';
-                targetSelect.innerHTML = '<option value="">Все цели</option>';
                 // Добавляем пилотов
                 pilots.forEach(pilot => {
                     const option = document.createElement('option');
@@ -976,15 +1093,7 @@
                     option.textContent = drone;
                     droneSelect.appendChild(option);
                 });
-                targetTypes.forEach(targetName => {
-                    const option = document.createElement('option');
-                    option.value = targetName;
-                    option.textContent = targetName;
-                    targetSelect.appendChild(option);
-                });
-                if (savedTarget && targetTypes.includes(savedTarget)) {
-                    targetSelect.value = savedTarget;
-                }
+                renderTargetFilterCheckboxes(targetTypes, savedTargets);
             } catch (error) {
                 console.error('Ошибка при получении данных для фильтров:', error);
             }
@@ -1079,6 +1188,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Страница статистики загружена');
             // Назначаем обработчики событий
+            initResultFilterCheckboxes();
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
@@ -1777,12 +1887,15 @@
                 date_to: document.getElementById('dateTo').value,
                 pilot_callname: document.getElementById('pilotFilter').value,
                 drone_type: document.getElementById('droneFilter').value,
-                target: document.getElementById('targetFilter').value,
+                targets: collectTargetFilterValues(),
                 results: collectResultFilterValues(),
             };
         }
 
         function applyFilters() {
+            if (!validateResultFilters()) {
+                return;
+            }
             const filters = getStatisticsFiltersFromForm();
             console.log('Применяем фильтры:', filters);
             fetchStatistics(filters);
@@ -1793,9 +1906,12 @@
             document.getElementById('dateTo').value = '';
             document.getElementById('pilotFilter').value = '';
             document.getElementById('droneFilter').value = '';
-            document.getElementById('targetFilter').value = '';
+            document.querySelectorAll('#targetFilterList input[type="checkbox"]').forEach((input) => {
+                input.checked = false;
+            });
             document.getElementById('resultDefeated').checked = true;
             document.getElementById('resultDestroyed').checked = true;
+            document.getElementById('resultNotDefeated').checked = false;
             console.log('Фильтры сброшены');
             fetchStatistics(getStatisticsFiltersFromForm());
         }
@@ -1810,6 +1926,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Страница статистики загружена');
             // Назначаем обработчики событий
+            initResultFilterCheckboxes();
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
