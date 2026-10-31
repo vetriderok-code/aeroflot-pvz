@@ -59,11 +59,15 @@ class StatisticsView(APIView):
         date_to_str = request.query_params.get('date_to')
         pilot_callname = request.query_params.get('pilot_callname')
         drone_type = request.query_params.get('drone_type')
-        target = (request.query_params.get('target') or '').strip()
+        target_params = [
+            value.strip()
+            for value in request.query_params.getlist('target')
+            if value and value.strip()
+        ]
         result_params = request.query_params.getlist('result')
         logger.debug(
             f"Параметры запроса: date_from={date_from_str}, date_to={date_to_str}, "
-            f"pilot_callname={pilot_callname}, drone_type={drone_type}, target={target!r}, result={result_params}"
+            f"pilot_callname={pilot_callname}, drone_type={drone_type}, target={target_params}, result={result_params}"
         )
 
         flights = Flight.objects.select_related('pilot')
@@ -111,9 +115,9 @@ class StatisticsView(APIView):
                 flights = flights.filter(drone=drone_type)
                 logger.debug(f"Фильтр по типу дрона (точное совпадение): {drone_type}")
 
-        if target:
-            flights = flights.filter(target=target)
-            logger.debug(f"Фильтр по цели: {target}")
+        if target_params:
+            flights = flights.filter(target__in=target_params)
+            logger.debug(f"Фильтр по целям: {target_params}")
 
         flights = filter_flights_by_result_list(flights, result_params)
         if result_params:
