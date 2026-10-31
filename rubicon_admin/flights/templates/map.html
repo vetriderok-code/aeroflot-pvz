@@ -166,6 +166,16 @@
             margin-bottom: 10px;
         }
 
+        .map-apply-hint {
+            margin: 0 0 16px;
+            padding: 10px 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #bbb;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
         .date-filters {
             display: flex;
             gap: 10px;
@@ -634,10 +644,25 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <h3>Фильтры полетов</h3>
-                <div class="coordinate-info">Координаты: СК-42 → WGS-84 · карта v8</div>
+                <div class="coordinate-info">Координаты: СК-42 → WGS-84 · карта v9</div>
             </div>
 
             <div class="sidebar-content">
+                <div class="filter-section">
+                    <label>Дата:</label>
+                    <div class="date-filters">
+                        <input type="date" id="dateFrom" placeholder="С даты">
+                        <input type="date" id="dateTo" placeholder="По дату">
+                    </div>
+                    <div class="today-button-container">
+                        <button type="button" class="today-btn" onclick="showTodayFlights()" title="Показать полеты за сегодня">
+                            📅 Сегодня
+                        </button>
+                    </div>
+                </div>
+
+                <p id="mapApplyHint" class="map-apply-hint">Задайте фильтры и нажмите «Применить», чтобы загрузить точки на карту.</p>
+
                 <div class="filter-section">
                     <label>Пилот:</label>
                     <select id="pilotFilter">
@@ -647,7 +672,7 @@
 
                 <div class="filter-section">
                     <label>Результат:</label>
-                    <select id="resultFilter" onchange="applyFilters()">
+                    <select id="resultFilter">
                         <option value="">Поражено и уничтожено</option>
                         <option value="defeated">Поражено</option>
                         <option value="destroyed">Уничтожено</option>
@@ -680,25 +705,12 @@
 
                 <div class="filter-section">
                     <div class="checkbox-item">
-                        <input type="checkbox" id="withVideoFilter" onchange="applyFilters()">
+                        <input type="checkbox" id="withVideoFilter">
                         <label for="withVideoFilter">Вылеты с видео (TG-отчёты)</label>
                     </div>
                     <small style="color: #666; display: block; margin-top: 4px; font-size: 11px;">
                         Только точки с прикреплённым видео из Отчетного квартала ТД
                     </small>
-                </div>
-
-                <div class="filter-section">
-                    <label>Дата:</label>
-                    <div class="date-filters">
-                        <input type="date" id="dateFrom" placeholder="С даты" onchange="applyFilters()">
-                        <input type="date" id="dateTo" placeholder="По дату" onchange="applyFilters()">
-                    </div>
-                    <div class="today-button-container">
-                        <button class="today-btn" onclick="showTodayFlights()" title="Показать полеты за сегодня">
-                            📅 Сегодня
-                        </button>
-                    </div>
                 </div>
 
                 <div class="filter-buttons">
@@ -1007,32 +1019,46 @@
             }, 50);
         }
 
+        function buildFlightsApiUrl(filterState) {
+            const params = new URLSearchParams();
+            params.set('_', String(Date.now()));
+            if (filterState.dateFrom) {
+                params.set('date_from', filterState.dateFrom);
+            }
+            if (filterState.dateTo) {
+                params.set('date_to', filterState.dateTo);
+            }
+            if (filterState.pilotFilter) {
+                params.set('pilot', filterState.pilotFilter);
+            }
+            if (filterState.resultFilter) {
+                params.set('result', filterState.resultFilter);
+            }
+            return '/api/flights/?' + params.toString();
+        }
+
+        function restoreMapFilterUi(filterState) {
+            const pilotSelect = document.getElementById('pilotFilter');
+            if (pilotSelect && filterState.pilotFilter) {
+                pilotSelect.value = filterState.pilotFilter;
+            }
+            const resultFilterEl = document.getElementById('resultFilter');
+            if (resultFilterEl && filterState.resultFilter) {
+                resultFilterEl.value = filterState.resultFilter;
+            }
+            if (filterState.selectedTargets && filterState.selectedTargets.length) {
+                const selectedSet = new Set(filterState.selectedTargets);
+                document.querySelectorAll('.target-checkbox').forEach((cb) => {
+                    cb.checked = selectedSet.has(cb.value);
+                });
+                updateSelectAllCheckbox();
+            }
+        }
+
         function applyFilters() {
             console.log('Применяем фильтры...');
             saveCurrentMapBounds();
-            const filterState = getMapFilterState();
-            console.log('Фильтры:', filterState);
-
-            if (filterState.withVideoOnly) {
-                console.log('Фильтр: только вылеты с прикреплённым видео');
-            }
-
-            filteredFlights = allFlights.filter((flight) => flightPassesMapFilters(flight, filterState));
-            console.log(
-                `Отфильтровано: ${filteredFlights.length} из ${allFlights.length}`
-                + (filterState.dateFrom || filterState.dateTo
-                    ? ` (дата: ${filterState.dateFrom || '…'} — ${filterState.dateTo || '…'})`
-                    : '')
-            );
-
-            syncFilteredTelegramReports(filterState);
-            refreshMapPoints();
-
-            loadTelegramReports().finally(() => {
-                syncFilteredTelegramReports(filterState);
-                refreshMapPoints();
-                setTimeout(restoreMapBounds, 500);
-            });
+            loadFlights(getMapFilterState());
         }
 
         // Альтернативная функция применения фильтров с более точным восстановлением
@@ -1821,8 +1847,6 @@
         document.addEventListener('change', function(e) {
              if (e.target && e.target.classList.contains('target-checkbox')) {
                  updateSelectAllCheckbox();
-                 // Опционально: автоматически применять фильтры при изменении чекбокса
-                 applyFilters();
              }
         });
 
@@ -1844,7 +1868,17 @@
                 withVideoFilter.checked = false;
             }
 
-            applyFilters();
+            allFlights = [];
+            filteredFlights = [];
+            if (objectManager) {
+                objectManager.removeAll();
+            }
+            syncFilteredTelegramReports(getMapFilterState());
+            updateVisibleStatistics();
+            const hint = document.getElementById('mapApplyHint');
+            if (hint) {
+                hint.style.display = 'block';
+            }
         }
 
         function formatDate(dateString) {
@@ -2237,7 +2271,6 @@
             }
 
             loadMapLayers();
-            loadFlights();
         }
 
         function geoJsonToYandexFeatures(layer) {
@@ -2416,20 +2449,21 @@
 
 
         // Обновленная функция загрузки полетов с индикатором обновления
-        function loadFlights() {
+        function loadFlights(capturedFilterState) {
             if (isUpdating) {
                 console.log('Обновление уже выполняется, пропускаем...');
                 return;
             }
 
-            isUpdating = true;
-            console.log('Начинаем загрузку полетов...');
+            const filterState = capturedFilterState || getMapFilterState();
+            const apiUrl = buildFlightsApiUrl(filterState);
+            console.log('Загрузка полётов:', apiUrl, filterState);
 
-            // Показываем индикатор обновления
+            isUpdating = true;
             showUpdateIndicator(true);
 
             Promise.allSettled([
-                fetch('/api/flights/').then((response) => {
+                fetch(apiUrl).then((response) => {
                     console.log('Получен ответ от сервера:', response.status);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -2444,18 +2478,8 @@
                         console.error('Ошибка загрузки полётов:', flightsResult.reason);
                     }
                     console.log('Получены данные полетов:', data.length);
-                    if (data.length > 0) {
-                        console.log('Первый полет (пример):', data[0]);
-                        console.log('Координаты первого полета:', data[0]?.coordinates_info);
-                        console.log('Координаты первого полета (lat_wgs84, lon_wgs84):', 
-                            data[0]?.coordinates_info?.lat_wgs84, 
-                            data[0]?.coordinates_info?.lon_wgs84);
-                    } else {
-                        console.warn('⚠️ API вернул пустой массив полетов!');
-                    }
 
                     allFlights = dedupeFlights(data);
-                    const filterState = getMapFilterState();
                     filteredFlights = allFlights.filter((flight) => flightPassesMapFilters(flight, filterState));
 
                     console.log('Всего полетов после загрузки:', allFlights.length);
@@ -2463,9 +2487,16 @@
 
                     collectFilterValues();
                     populateFilterDropdowns();
+                    restoreMapFilterUi(filterState);
                     syncFilteredTelegramReports(filterState);
                     refreshMapPoints();
 
+                    const hint = document.getElementById('mapApplyHint');
+                    if (hint) {
+                        hint.style.display = 'none';
+                    }
+
+                    setTimeout(restoreMapBounds, 500);
 
                     setTimeout(() => {
                         showUpdateIndicator(false);
