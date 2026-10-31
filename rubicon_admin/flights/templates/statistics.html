@@ -61,11 +61,15 @@
             display: flex;
             flex-direction: column;
         }
-        .filter-group label {
+        .filter-group > label,
+        .filter-group > .filter-label {
             margin-bottom: 8px;
             font-weight: 500;
             color: #ccc;
             font-size: 14px;
+        }
+        .filter-group--results {
+            grid-column: 1 / -1;
         }
         .filter-group input, .filter-group select {
             padding: 10px;
@@ -77,17 +81,21 @@
         }
         .result-checkboxes {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px 18px;
-            margin-top: 6px;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 20px 28px;
         }
         .result-checkboxes label {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             font-weight: normal;
+            font-size: 14px;
+            color: #e0e0e0;
             cursor: pointer;
             margin: 0;
+            white-space: nowrap;
         }
         .result-checkboxes input[type="checkbox"] {
             width: auto;
@@ -564,8 +572,13 @@
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
-            .filter-group label {
+            .filter-group > label,
+            .filter-group > .filter-label {
                 font-size: 13px;
+            }
+            .result-checkboxes {
+                flex-wrap: wrap;
+                gap: 12px 16px;
             }
             .filter-group input, .filter-group select {
                 padding: 8px;
@@ -670,7 +683,7 @@
                         <!-- Опции будут заполнены динамически -->
                     </select>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group filter-group--results">
                     <span class="filter-label">Степень поражения:</span>
                     <div class="result-checkboxes" role="group" aria-label="Степень поражения">
                         <label>
