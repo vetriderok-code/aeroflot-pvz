@@ -681,6 +681,10 @@
                             <input type="checkbox" id="resultDestroyed" value="destroyed" checked>
                             Уничтожено
                         </label>
+                        <label>
+                            <input type="checkbox" id="resultNotDefeated" value="not_defeated">
+                            Не поражено
+                        </label>
                     </div>
                 </div>
             </div>
@@ -848,6 +852,12 @@
         let heatmapMap = null;
         let heatmapLayer = null;
         
+        const RESULT_FILTER_CHECKBOX_IDS = [
+            'resultDefeated',
+            'resultDestroyed',
+            'resultNotDefeated',
+        ];
+
         function collectResultFilterValues() {
             const results = [];
             if (document.getElementById('resultDefeated').checked) {
@@ -856,7 +866,40 @@
             if (document.getElementById('resultDestroyed').checked) {
                 results.push('destroyed');
             }
+            if (document.getElementById('resultNotDefeated').checked) {
+                results.push('not_defeated');
+            }
             return results;
+        }
+
+        function countResultFiltersChecked() {
+            return RESULT_FILTER_CHECKBOX_IDS.filter(
+                (id) => document.getElementById(id).checked
+            ).length;
+        }
+
+        function validateResultFilters() {
+            if (collectResultFilterValues().length > 0) {
+                return true;
+            }
+            alert('Выберите хотя бы один результат: поражено, уничтожено или не поражено.');
+            return false;
+        }
+
+        function initResultFilterCheckboxes() {
+            RESULT_FILTER_CHECKBOX_IDS.forEach((id) => {
+                const input = document.getElementById(id);
+                if (!input || input.dataset.resultGuard === '1') {
+                    return;
+                }
+                input.dataset.resultGuard = '1';
+                input.addEventListener('change', function () {
+                    if (countResultFiltersChecked() > 0) {
+                        return;
+                    }
+                    this.checked = true;
+                });
+            });
         }
 
         function buildStatisticsQueryParams(filters = {}) {
@@ -1076,6 +1119,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Страница статистики загружена');
             // Назначаем обработчики событий
+            initResultFilterCheckboxes();
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
@@ -1780,6 +1824,9 @@
         }
 
         function applyFilters() {
+            if (!validateResultFilters()) {
+                return;
+            }
             const filters = getStatisticsFiltersFromForm();
             console.log('Применяем фильтры:', filters);
             fetchStatistics(filters);
@@ -1793,6 +1840,7 @@
             document.getElementById('targetFilter').value = '';
             document.getElementById('resultDefeated').checked = true;
             document.getElementById('resultDestroyed').checked = true;
+            document.getElementById('resultNotDefeated').checked = false;
             console.log('Фильтры сброшены');
             fetchStatistics(getStatisticsFiltersFromForm());
         }
@@ -1807,6 +1855,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Страница статистики загружена');
             // Назначаем обработчики событий
+            initResultFilterCheckboxes();
             document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
             document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
             // Загружаем начальные данные
